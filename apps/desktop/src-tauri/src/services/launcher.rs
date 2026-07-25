@@ -1,6 +1,12 @@
 use std::process::Command;
 use std::path::Path;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const CREATE_NEW_CONSOLE: u32 = 0x00000010;
+
 pub fn launch_editor(
     profile: &str,
     custom_exec: &str,
@@ -74,15 +80,24 @@ pub fn launch_terminal(
     {
         match profile {
             "wt" | "auto" => {
-                let res = Command::new("wt.exe")
+                // Attempt Windows Terminal via start command or direct wt.exe
+                let wt_res = Command::new("cmd.exe")
+                    .creation_flags(CREATE_NEW_CONSOLE)
+                    .arg("/c")
+                    .arg("start")
+                    .arg("")
+                    .arg("wt.exe")
                     .arg("-d")
                     .arg(target_path)
                     .spawn();
-                if res.is_ok() {
+
+                if wt_res.is_ok() {
                     return Ok(());
                 }
-                // Fallback to powershell if wt fails
+
+                // Fallback to independent PowerShell window
                 Command::new("powershell.exe")
+                    .creation_flags(CREATE_NEW_CONSOLE)
                     .arg("-NoExit")
                     .arg("-Command")
                     .arg(format!("Set-Location -LiteralPath '{}'", target_path))
@@ -91,6 +106,7 @@ pub fn launch_terminal(
             }
             "powershell" => {
                 Command::new("powershell.exe")
+                    .creation_flags(CREATE_NEW_CONSOLE)
                     .arg("-NoExit")
                     .arg("-Command")
                     .arg(format!("Set-Location -LiteralPath '{}'", target_path))
@@ -99,6 +115,7 @@ pub fn launch_terminal(
             }
             "cmd" => {
                 Command::new("cmd.exe")
+                    .creation_flags(CREATE_NEW_CONSOLE)
                     .arg("/k")
                     .arg(format!("cd /d \"{}\"", target_path))
                     .spawn()
@@ -109,6 +126,7 @@ pub fn launch_terminal(
                     return Err("Custom terminal executable is not configured.".to_string());
                 }
                 let mut cmd = Command::new(custom_exec);
+                cmd.creation_flags(CREATE_NEW_CONSOLE);
                 cmd.current_dir(target_path);
                 for arg in custom_args {
                     cmd.arg(arg.replace("{path}", target_path));
@@ -117,9 +135,11 @@ pub fn launch_terminal(
                     .map_err(|e| format!("Failed to launch custom terminal ({}) : {}", custom_exec, e))?;
             }
             _ => {
-                Command::new("wt.exe")
-                    .arg("-d")
-                    .arg(target_path)
+                Command::new("powershell.exe")
+                    .creation_flags(CREATE_NEW_CONSOLE)
+                    .arg("-NoExit")
+                    .arg("-Command")
+                    .arg(format!("Set-Location -LiteralPath '{}'", target_path))
                     .spawn()
                     .map_err(|e| format!("Failed to launch terminal: {}", e))?;
             }
