@@ -142,7 +142,7 @@ export const DownloadSection: React.FC = () => {
                 </div>
 
                 <div className="pt-4 border-t border-slate-800/80">
-                  <a href={downloadUrl} target="_blank" rel="noreferrer" className="w-full inline-block">
+                  <a href={downloadUrl} target="_blank" rel="noreferrer" className="w-full inline-flex">
                     <Button
                       variant={isRecommended ? 'primary' : 'outline'}
                       fullWidth

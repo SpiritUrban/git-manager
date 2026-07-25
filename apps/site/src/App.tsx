@@ -8,7 +8,7 @@ import { RoadmapSection } from './components/RoadmapSection.js';
 import { Footer } from './components/Footer.js';
 import { Button, Badge } from '@git-manager/ui';
 import { PRODUCT_METADATA } from '@git-manager/shared';
-import { Download, Github, ShieldAlert } from 'lucide-react';
+import { Download, Github } from 'lucide-react';
 
 export const App: React.FC = () => {
   return (
@@ -33,12 +33,12 @@ export const App: React.FC = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-            <a href="#download">
+            <a href="#download" className="inline-flex">
               <Button variant="primary" size="lg" icon={<Download className="w-5 h-5" />}>
                 Download Git Manager
               </Button>
             </a>
-            <a href={PRODUCT_METADATA.repositoryUrl} target="_blank" rel="noreferrer">
+            <a href={PRODUCT_METADATA.repositoryUrl} target="_blank" rel="noreferrer" className="inline-flex">
               <Button variant="outline" size="lg" icon={<Github className="w-5 h-5" />}>
                 View on GitHub
               </Button>

@@ -35,12 +35,12 @@ export const Header: React.FC = () => {
         </nav>
 
         <div className="flex items-center gap-3">
-          <a href={PRODUCT_METADATA.repositoryUrl} target="_blank" rel="noreferrer">
+          <a href={PRODUCT_METADATA.repositoryUrl} target="_blank" rel="noreferrer" className="inline-flex">
             <Button variant="ghost" size="sm" icon={<Github className="w-4 h-4" />}>
               GitHub
             </Button>
           </a>
-          <a href="#download">
+          <a href="#download" className="inline-flex">
             <Button variant="primary" size="sm" icon={<Download className="w-4 h-4" />}>
               Get Git Manager
             </Button>

@@ -15,7 +15,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed select-none active:scale-95';
+  const baseStyles = 'inline-flex flex-row items-center justify-center rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed select-none active:scale-95 shrink-0 cursor-pointer';
 
   const variantStyles = {
     ghost: 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 focus:ring-indigo-500',
@@ -25,9 +25,9 @@ export const IconButton: React.FC<IconButtonProps> = ({
   };
 
   const sizeStyles = {
-    sm: 'p-1 text-xs',
-    md: 'p-1.5 text-sm',
-    lg: 'p-2.5 text-base',
+    sm: 'p-1.5 text-xs min-w-[28px] min-h-[28px]',
+    md: 'p-2 text-sm min-w-[36px] min-h-[36px]',
+    lg: 'p-2.5 text-base min-w-[44px] min-h-[44px]',
   };
 
   return (
@@ -38,7 +38,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       {...props}
     >
-      {icon}
+      <span className="inline-flex items-center justify-center shrink-0">{icon}</span>
     </button>
   );
 };

@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "tauri dev",
+    "dev:frontend": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.7",
+    "@tauri-apps/cli": "^2.2.0",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -7,12 +7,32 @@ import type { ScanSummary, LaunchResult, IconResolutionResult, EditorProfileId, 
 
 export async function selectFolderDialog(title: string = 'Select Projects Directory'): Promise<string | null> {
   try {
-    const selected = await openDialog({
+    const selected: any = await openDialog({
       directory: true,
       multiple: false,
       title,
     });
-    if (typeof selected === 'string') return selected;
+
+    if (!selected) return null;
+
+    if (typeof selected === 'string') {
+      return selected;
+    }
+
+    if (typeof selected === 'object' && selected !== null) {
+      if (typeof selected.path === 'string') {
+        return selected.path;
+      }
+    }
+
+    if (Array.isArray(selected) && selected.length > 0) {
+      const first = selected[0];
+      if (typeof first === 'string') return first;
+      if (typeof first === 'object' && first !== null && typeof first.path === 'string') {
+        return first.path;
+      }
+    }
+
     return null;
   } catch (err) {
     console.error('Dialog error:', err);

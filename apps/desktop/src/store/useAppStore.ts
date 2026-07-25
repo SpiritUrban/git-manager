@@ -230,21 +230,34 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     try {
       const summary = await tauri.invokeScanRootFolder(targetPath);
-      const discoveredRepos = summary.repos || [];
+      let discoveredRepos = summary.repos || [];
+
+      // Fallback: If no sub-repositories were discovered with .git, treat targetPath itself as a project
+      if (discoveredRepos.length === 0) {
+        const folderName = targetPath.replace(/[/\\]+$/, '').split(/[/\\]/).pop() || 'Project';
+        discoveredRepos = [
+          {
+            path: targetPath,
+            normalized_path: normPath,
+            name: folderName,
+            remote_origin: null,
+            repository_url: null,
+            website_url: null,
+            icon_path: null,
+          },
+        ];
+      }
+
       const upsertResult = await db.upsertScanProjects(discoveredRepos);
 
       summary.added = upsertResult.added;
       summary.updated = upsertResult.updated;
 
-      // Update missing status for projects in database
-      const discoveredNormPaths = new Set(discoveredRepos.map((r: { normalized_path: string }) => r.normalized_path));
-      await db.setMissingStatusForUnseen(discoveredNormPaths);
-
       set({ lastScanSummary: summary, isScanning: false, scanProgress: null });
       await get().loadProjects();
 
       get().showToast(
-        `Scan finished: ${summary.added} added, ${summary.updated} updated`,
+        `Added ${upsertResult.added} new project(s), updated ${upsertResult.updated}`,
         'success'
       );
     } catch (err: any) {
