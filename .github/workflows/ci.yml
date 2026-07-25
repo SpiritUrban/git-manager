@@ -47,6 +47,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -60,6 +69,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
+      # tauri::generate_context! embeds the frontend bundle at compile time, and
+      # apps/desktop/dist is gitignored — without this the Rust checks cannot
+      # compile at all.
+      - name: Build Desktop Frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build:desktop
+
       - name: Check Rust Formatting
         run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml --check
 
@@ -69,19 +86,20 @@ jobs:
           cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml \
             --message-format=short -- -D warnings 2>&1 | tee clippy.log
 
-      # Clippy output otherwise lives only in the run log, which is not readable
-      # without a signed-in session. Annotations and the job summary are.
+      # Clippy output otherwise lives only in the run log, which needs a
+      # signed-in session to read. Annotations are public on a public repo.
       - name: Surface Clippy diagnostics
         if: failure()
         run: |
-          grep -E ':[0-9]+:[0-9]+: (error|warning)' clippy.log | head -40 |
-            while IFS= read -r line; do echo "::error::$line"; done
-          {
-            echo '### Clippy output'
-            echo '```'
-            head -200 clippy.log
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          if [ ! -s clippy.log ]; then
+            echo "::error title=Clippy::clippy.log is missing or empty"
+            exit 0
+          fi
+          log=$(tail -c 6000 clippy.log)
+          log="${log//'%'/'%25'}"
+          log="${log//$'\r'/'%0D'}"
+          log="${log//$'\n'/'%0A'}"
+          echo "::error title=Clippy output::$log"
 
       - name: Run Rust Unit Tests
         run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
