@@ -35,7 +35,7 @@ export const DownloadSection: React.FC = () => {
     }
 
     // Attempt to load download manifest
-    fetch('./download-manifest.json')
+    fetch(`${import.meta.env.BASE_URL}download-manifest.json`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => setManifest(data))
       .catch(() => setManifest(null));
