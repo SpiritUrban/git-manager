@@ -239,6 +239,11 @@ pub fn launch_dev_server(
         return Err(format!("Target directory does not exist: {}", target_path));
     }
 
+    // The macOS and Linux paths below always use the system terminal, so the
+    // profile and custom-command settings only take effect on Windows for now.
+    #[cfg(not(target_os = "windows"))]
+    let _ = (profile, custom_exec, custom_args);
+
     // Determine package manager dev command from lockfiles or package.json
     let dev_cmd = if path_obj.join("pnpm-lock.yaml").exists() {
         "pnpm dev"
