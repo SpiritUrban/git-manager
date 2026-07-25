@@ -12,7 +12,8 @@ pub fn clear_icon_cache(app: AppHandle) -> Result<bool, String> {
 
     if cache_dir.exists() {
         fs::remove_dir_all(&cache_dir).map_err(|e| format!("Failed to clear icon cache: {}", e))?;
-        fs::create_dir_all(&cache_dir).map_err(|e| format!("Failed to recreate icon cache dir: {}", e))?;
+        fs::create_dir_all(&cache_dir)
+            .map_err(|e| format!("Failed to recreate icon cache dir: {}", e))?;
     }
 
     Ok(true)

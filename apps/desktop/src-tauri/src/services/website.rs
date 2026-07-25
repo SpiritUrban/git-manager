@@ -142,7 +142,11 @@ fn from_cname(dir: &Path, prefix: &str) -> Option<WebsiteDetection> {
     None
 }
 
-fn from_env_files(dir: &Path, prefix: &str, repository_url: Option<&str>) -> Option<WebsiteDetection> {
+fn from_env_files(
+    dir: &Path,
+    prefix: &str,
+    repository_url: Option<&str>,
+) -> Option<WebsiteDetection> {
     for file in ENV_FILES {
         let path = dir.join(file);
         let Ok(content) = fs::read_to_string(&path) else {
@@ -176,15 +180,43 @@ fn from_env_files(dir: &Path, prefix: &str, repository_url: Option<&str>) -> Opt
 /// Qualifiers that mean "this is the public site", as a whole `_`-delimited
 /// segment immediately before `URL`.
 const SITE_QUALIFIERS: &[&str] = &[
-    "SITE", "APP", "WEB", "WEBSITE", "HOME", "DOMAIN", "ORIGIN", "PUBLIC", "PROD", "PRODUCTION",
+    "SITE",
+    "APP",
+    "WEB",
+    "WEBSITE",
+    "HOME",
+    "DOMAIN",
+    "ORIGIN",
+    "PUBLIC",
+    "PROD",
+    "PRODUCTION",
 ];
 
 /// Segments that mark a URL as infrastructure, never the site. A connection
 /// string must never end up in a user-visible field.
 const NEVER_A_SITE: &[&str] = &[
-    "DATABASE", "SUPABASE", "POSTGRES", "POSTGRESQL", "MYSQL", "MONGO", "MONGODB", "REDIS",
-    "SMTP", "AMQP", "KAFKA", "S3", "AWS", "SENTRY", "WEBHOOK", "CALLBACK", "SECRET", "TOKEN",
-    "KEY", "PASSWORD", "DSN", "PROXY",
+    "DATABASE",
+    "SUPABASE",
+    "POSTGRES",
+    "POSTGRESQL",
+    "MYSQL",
+    "MONGO",
+    "MONGODB",
+    "REDIS",
+    "SMTP",
+    "AMQP",
+    "KAFKA",
+    "S3",
+    "AWS",
+    "SENTRY",
+    "WEBHOOK",
+    "CALLBACK",
+    "SECRET",
+    "TOKEN",
+    "KEY",
+    "PASSWORD",
+    "DSN",
+    "PROXY",
 ];
 
 /// Matches the naming every framework converged on, plus deploy-script variants
@@ -215,7 +247,11 @@ fn is_site_url_key(key: &str) -> bool {
     }
 }
 
-fn from_config_files(dir: &Path, prefix: &str, repository_url: Option<&str>) -> Option<WebsiteDetection> {
+fn from_config_files(
+    dir: &Path,
+    prefix: &str,
+    repository_url: Option<&str>,
+) -> Option<WebsiteDetection> {
     for (file, key) in CONFIG_KEYS {
         let path = dir.join(file);
         let Ok(content) = fs::read_to_string(&path) else {
@@ -233,7 +269,9 @@ fn from_config_files(dir: &Path, prefix: &str, repository_url: Option<&str>) -> 
             if !after.starts_with(':') && !after.starts_with('=') {
                 continue;
             }
-            if let Some(url) = first_quoted_url(after).and_then(|c| usable_site_url(&c, repository_url)) {
+            if let Some(url) =
+                first_quoted_url(after).and_then(|c| usable_site_url(&c, repository_url))
+            {
                 return Some(WebsiteDetection {
                     url,
                     source: format!("{}{} · {}", prefix, file, key),
@@ -257,7 +295,11 @@ fn first_quoted_url(fragment: &str) -> Option<String> {
     None
 }
 
-fn from_package_json(dir: &Path, prefix: &str, repository_url: Option<&str>) -> Option<WebsiteDetection> {
+fn from_package_json(
+    dir: &Path,
+    prefix: &str,
+    repository_url: Option<&str>,
+) -> Option<WebsiteDetection> {
     let content = fs::read_to_string(dir.join("package.json")).ok()?;
     let json: Value = serde_json::from_str(&content).ok()?;
     let homepage = json.get("homepage")?.as_str()?;
@@ -299,7 +341,10 @@ pub fn usable_site_url(raw: &str, repository_url: Option<&str>) -> Option<String
         return None;
     }
 
-    if INFRA_HOST_SUFFIXES.iter().any(|suffix| host.ends_with(suffix)) {
+    if INFRA_HOST_SUFFIXES
+        .iter()
+        .any(|suffix| host.ends_with(suffix))
+    {
         return None;
     }
 
@@ -318,7 +363,10 @@ pub fn usable_site_url(raw: &str, repository_url: Option<&str>) -> Option<String
 fn same_target(a: &str, b: &str) -> bool {
     fn key(raw: &str) -> Option<String> {
         let parsed = url::Url::parse(raw).ok()?;
-        let host = parsed.host_str()?.trim_start_matches("www.").to_ascii_lowercase();
+        let host = parsed
+            .host_str()?
+            .trim_start_matches("www.")
+            .to_ascii_lowercase();
         let path = parsed.path().trim_end_matches('/').to_ascii_lowercase();
         Some(format!("{}{}", host, path))
     }

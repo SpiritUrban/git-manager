@@ -4,16 +4,40 @@ use std::path::Path;
 
 use ignore::WalkBuilder;
 
-use crate::models::{FileSummary, LanguageStat, MapNode, RepoSummary};
 use super::languages::{classify, count_lines, count_todo_markers, Classification};
+use crate::models::{FileSummary, LanguageStat, MapNode, RepoSummary};
 
 /// Directories that are never interesting even when not gitignored — build
 /// output, dependency trees and tool caches would otherwise dominate every metric.
 const ALWAYS_SKIP: &[&str] = &[
-    ".git", "node_modules", "target", "dist", "build", "out", ".next", ".nuxt", ".svelte-kit",
-    ".turbo", ".parcel-cache", ".cache", "coverage", "vendor", "__pycache__", ".venv", "venv",
-    ".tox", ".mypy_cache", ".pytest_cache", ".gradle", ".idea", ".vs", "Pods", "DerivedData",
-    ".terraform", ".serverless", "bower_components",
+    ".git",
+    "node_modules",
+    "target",
+    "dist",
+    "build",
+    "out",
+    ".next",
+    ".nuxt",
+    ".svelte-kit",
+    ".turbo",
+    ".parcel-cache",
+    ".cache",
+    "coverage",
+    "vendor",
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".gradle",
+    ".idea",
+    ".vs",
+    "Pods",
+    "DerivedData",
+    ".terraform",
+    ".serverless",
+    "bower_components",
 ];
 
 /// Hard ceilings so a pathological repository cannot hang the UI.
@@ -205,7 +229,7 @@ pub fn language_breakdown(records: &[FileRecord]) -> Vec<LanguageStat> {
 
 pub fn largest_files(records: &[FileRecord], limit: usize) -> Vec<FileSummary> {
     let mut list: Vec<&FileRecord> = records.iter().filter(|r| r.lines > 0).collect();
-    list.sort_by(|a, b| b.lines.cmp(&a.lines));
+    list.sort_by_key(|r| std::cmp::Reverse(r.lines));
     list.into_iter()
         .take(limit)
         .map(|r| FileSummary {
@@ -343,7 +367,10 @@ pub fn build_map(records: &[FileRecord], depth: usize) -> MapNode {
             child.lines += record.lines;
             child.bytes += record.bytes;
             child.weight += weight;
-            *child.languages.entry(record.language.clone()).or_insert(0.0) += weight;
+            *child
+                .languages
+                .entry(record.language.clone())
+                .or_insert(0.0) += weight;
             continue;
         }
         root.insert(&segments, record, weight);

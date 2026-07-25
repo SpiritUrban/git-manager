@@ -83,6 +83,12 @@ fn detects_the_expected_stack_for_this_repository() {
     let names: Vec<&str> = analysis.stack.iter().map(|s| s.name.as_str()).collect();
 
     assert!(names.contains(&"Rust"), "Cargo.toml should imply Rust");
-    assert!(names.contains(&"TypeScript"), "tsconfig should imply TypeScript");
-    assert!(names.contains(&"Tauri"), "tauri.conf.json should imply Tauri");
+    assert!(
+        names.contains(&"TypeScript"),
+        "tsconfig should imply TypeScript"
+    );
+    assert!(
+        names.contains(&"Tauri"),
+        "tauri.conf.json should imply Tauri"
+    );
 }

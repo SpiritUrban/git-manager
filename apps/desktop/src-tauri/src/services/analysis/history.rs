@@ -73,7 +73,10 @@ pub fn analyze_history(repo: &Path) -> Option<HistoryOutcome> {
             "--no-merges",
             &format!("--max-count={}", MAX_COMMITS),
             "--numstat",
-            &format!("--pretty=format:{}%H{}%an{}%ae{}%aI{}%s", RS, FS, FS, FS, FS),
+            &format!(
+                "--pretty=format:{}%H{}%an{}%ae{}%aI{}%s",
+                RS, FS, FS, FS, FS
+            ),
         ],
     )?;
 
@@ -246,8 +249,14 @@ fn build_stats(repo: &Path, commits: &[CommitRecord]) -> GitStats {
         punchcard: punchcard(commits),
         authors: author_stats(commits),
         bus_factor: bus_factor(commits),
-        branches: count_lines_of(git(repo, &["for-each-ref", "--format=%(refname)", "refs/heads"])),
-        tags: count_lines_of(git(repo, &["for-each-ref", "--format=%(refname)", "refs/tags"])),
+        branches: count_lines_of(git(
+            repo,
+            &["for-each-ref", "--format=%(refname)", "refs/heads"],
+        )),
+        tags: count_lines_of(git(
+            repo,
+            &["for-each-ref", "--format=%(refname)", "refs/tags"],
+        )),
         recent_commits: recent_commits(commits, 8),
     }
     .with_worktree_state(repo)
@@ -321,14 +330,16 @@ fn author_stats(commits: &[CommitRecord]) -> Vec<AuthorStat> {
     let mut acc: HashMap<String, Acc> = HashMap::new();
 
     for commit in commits {
-        let entry = acc.entry(commit.author_email.clone()).or_insert_with(|| Acc {
-            names: HashMap::new(),
-            commits: 0,
-            insertions: 0,
-            deletions: 0,
-            first: commit.timestamp,
-            last: commit.timestamp,
-        });
+        let entry = acc
+            .entry(commit.author_email.clone())
+            .or_insert_with(|| Acc {
+                names: HashMap::new(),
+                commits: 0,
+                insertions: 0,
+                deletions: 0,
+                first: commit.timestamp,
+                last: commit.timestamp,
+            });
         *entry.names.entry(commit.author_name.clone()).or_insert(0) += 1;
         entry.commits += 1;
         entry.insertions += commit.insertions;
@@ -353,7 +364,11 @@ fn author_stats(commits: &[CommitRecord]) -> Vec<AuthorStat> {
             commits: a.commits,
             insertions: a.insertions,
             deletions: a.deletions,
-            share: if total > 0.0 { a.commits as f64 / total } else { 0.0 },
+            share: if total > 0.0 {
+                a.commits as f64 / total
+            } else {
+                0.0
+            },
             first_commit_at: a.first.to_rfc3339(),
             last_commit_at: a.last.to_rfc3339(),
         })

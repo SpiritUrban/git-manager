@@ -1,5 +1,7 @@
 use crate::models::LaunchResult;
-use crate::services::launcher::{launch_editor, launch_terminal, launch_dev_server as service_launch_dev_server, open_folder};
+use crate::services::launcher::{
+    launch_dev_server as service_launch_dev_server, launch_editor, launch_terminal, open_folder,
+};
 
 #[tauri::command]
 pub fn launch_code_editor(

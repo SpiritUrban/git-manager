@@ -82,7 +82,13 @@ where
 /// True when the directory declares dependencies — the usual proof that it is an
 /// application or package rather than an incidental folder.
 pub fn has_manifest(dir: &Path) -> bool {
-    ["package.json", "Cargo.toml", "go.mod", "pyproject.toml", "composer.json"]
-        .iter()
-        .any(|manifest| dir.join(manifest).is_file())
+    [
+        "package.json",
+        "Cargo.toml",
+        "go.mod",
+        "pyproject.toml",
+        "composer.json",
+    ]
+    .iter()
+    .any(|manifest| dir.join(manifest).is_file())
 }

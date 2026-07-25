@@ -8,12 +8,15 @@ use std::sync::Arc;
 fn test_is_git_repository_and_scanner() {
     let tmp_dir = std::env::temp_dir().join("git_manager_test_scanner");
     let _ = fs::remove_dir_all(&tmp_dir);
-    
+
     let repo_dir = tmp_dir.join("test_repo");
     let git_dir = repo_dir.join(".git");
     fs::create_dir_all(&git_dir).unwrap();
 
-    let node_modules_dir = repo_dir.join("node_modules").join("nested_fake_repo").join(".git");
+    let node_modules_dir = repo_dir
+        .join("node_modules")
+        .join("nested_fake_repo")
+        .join(".git");
     fs::create_dir_all(&node_modules_dir).unwrap();
 
     assert!(is_git_repository(&repo_dir));

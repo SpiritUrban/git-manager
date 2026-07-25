@@ -188,7 +188,12 @@ pub fn detect(root: &Path, file_paths: &[String]) -> StackDetection {
                         || trimmed.starts_with(&format!("{}=", dep))
                         || trimmed.starts_with(&format!("{} =", dep))
                 }) {
-                    add(name, category, format!("{}Cargo.toml · {}", prefix, dep), None);
+                    add(
+                        name,
+                        category,
+                        format!("{}Cargo.toml · {}", prefix, dep),
+                        None,
+                    );
                 }
             }
         }
@@ -201,7 +206,12 @@ pub fn detect(root: &Path, file_paths: &[String]) -> StackDetection {
         || root.join(".circleci").is_dir();
 
     if root.join(".github/workflows").is_dir() {
-        add("GitHub Actions", "ci", ".github/workflows".to_string(), None);
+        add(
+            "GitHub Actions",
+            "ci",
+            ".github/workflows".to_string(),
+            None,
+        );
     }
 
     let package_manager = if root.join("pnpm-lock.yaml").is_file() {
@@ -249,9 +259,15 @@ pub fn detect(root: &Path, file_paths: &[String]) -> StackDetection {
         // A workspace member's manifest counts: monorepos declare dependencies
         // per package, not at the root.
         has_manifest: roots.iter().any(|(_, dir)| {
-            ["package.json", "Cargo.toml", "go.mod", "pyproject.toml", "composer.json"]
-                .iter()
-                .any(|m| dir.join(m).is_file())
+            [
+                "package.json",
+                "Cargo.toml",
+                "go.mod",
+                "pyproject.toml",
+                "composer.json",
+            ]
+            .iter()
+            .any(|m| dir.join(m).is_file())
         }),
     }
 }

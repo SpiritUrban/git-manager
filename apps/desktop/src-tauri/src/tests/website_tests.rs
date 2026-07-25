@@ -148,7 +148,10 @@ fn ignores_commented_and_localhost_env_values() {
     let fixture = Fixture::new("env-noise");
     fixture
         .write("package.json", r#"{"name":"app"}"#)
-        .write(".env.example", "NEXT_PUBLIC_SITE_URL=http://localhost:3000\n")
+        .write(
+            ".env.example",
+            "NEXT_PUBLIC_SITE_URL=http://localhost:3000\n",
+        )
         .write(".env", "# NEXT_PUBLIC_SITE_URL=https://commented-out.dev\n");
 
     assert!(find_website_url(fixture.path(), None).is_none());
@@ -172,7 +175,10 @@ fn finds_the_site_declared_in_a_nested_app() {
     let fixture = Fixture::new("monorepo");
     fixture
         .write("package.json", r#"{"name":"root","private":true}"#)
-        .write("apps/web/package.json", r#"{"homepage":"https://app.example-site.dev"}"#);
+        .write(
+            "apps/web/package.json",
+            r#"{"homepage":"https://app.example-site.dev"}"#,
+        );
 
     let found = find_website_url(fixture.path(), None).expect("should detect the site");
     assert_eq!(found.url, "https://app.example-site.dev");

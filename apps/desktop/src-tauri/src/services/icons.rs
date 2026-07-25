@@ -1,8 +1,8 @@
+use reqwest::header::CONTENT_TYPE;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 use std::time::Duration;
-use reqwest::header::CONTENT_TYPE;
 use tauri::AppHandle;
 use tauri::Manager;
 
@@ -70,9 +70,7 @@ pub fn cache_local_icon(
         return Err(format!("Source icon file does not exist: {}", source_path));
     }
 
-    let ext = src.extension()
-        .and_then(|e| e.to_str())
-        .unwrap_or("ico");
+    let ext = src.extension().and_then(|e| e.to_str()).unwrap_or("ico");
 
     let cache_dir = app
         .path()
@@ -99,7 +97,10 @@ pub async fn fetch_remote_favicon(
 
     let parsed = url::Url::parse(website_url).map_err(|e| format!("Invalid URL: {}", e))?;
     let domain = parsed.host_str().unwrap_or("domain");
-    let favicon_url = format!("https://www.google.com/s2/favicons?domain={}&sz=128", domain);
+    let favicon_url = format!(
+        "https://www.google.com/s2/favicons?domain={}&sz=128",
+        domain
+    );
 
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
@@ -118,7 +119,8 @@ pub async fn fetch_remote_favicon(
 
     if let Some(ct) = response.headers().get(CONTENT_TYPE) {
         let ct_str = ct.to_str().unwrap_or("");
-        if !ct_str.contains("image") && !ct_str.contains("octet-stream") && !ct_str.contains("icon") {
+        if !ct_str.contains("image") && !ct_str.contains("octet-stream") && !ct_str.contains("icon")
+        {
             return Err(format!("Invalid content-type: {}", ct_str));
         }
     }
@@ -141,8 +143,10 @@ pub async fn fetch_remote_favicon(
     fs::create_dir_all(&cache_dir).map_err(|e| format!("Failed to create cache dir: {}", e))?;
 
     let target_file = cache_dir.join(format!("{}.png", project_id));
-    let mut file = File::create(&target_file).map_err(|e| format!("Failed to save cache file: {}", e))?;
-    file.write_all(&bytes).map_err(|e| format!("Failed to write cache file: {}", e))?;
+    let mut file =
+        File::create(&target_file).map_err(|e| format!("Failed to save cache file: {}", e))?;
+    file.write_all(&bytes)
+        .map_err(|e| format!("Failed to write cache file: {}", e))?;
 
     Ok(target_file.to_string_lossy().to_string())
 }

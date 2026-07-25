@@ -1,5 +1,5 @@
-use std::process::Command;
 use std::path::Path;
+use std::process::Command;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -129,8 +129,9 @@ pub fn launch_terminal(
                 for arg in custom_args {
                     cmd.arg(arg.replace("{path}", target_path));
                 }
-                cmd.spawn()
-                    .map_err(|e| format!("Failed to launch custom terminal ({}) : {}", custom_exec, e))?;
+                cmd.spawn().map_err(|e| {
+                    format!("Failed to launch custom terminal ({}) : {}", custom_exec, e)
+                })?;
             }
             _ => {
                 Command::new("powershell.exe")
@@ -275,7 +276,10 @@ pub fn launch_dev_server(
                     .creation_flags(CREATE_NEW_CONSOLE)
                     .arg("-NoExit")
                     .arg("-Command")
-                    .arg(format!("Set-Location -LiteralPath '{}'; {}", target_path, dev_cmd))
+                    .arg(format!(
+                        "Set-Location -LiteralPath '{}'; {}",
+                        target_path, dev_cmd
+                    ))
                     .spawn()
                     .map_err(|e| format!("Failed to launch dev server: {}", e))?;
             }
@@ -284,7 +288,10 @@ pub fn launch_dev_server(
                     .creation_flags(CREATE_NEW_CONSOLE)
                     .arg("-NoExit")
                     .arg("-Command")
-                    .arg(format!("Set-Location -LiteralPath '{}'; {}", target_path, dev_cmd))
+                    .arg(format!(
+                        "Set-Location -LiteralPath '{}'; {}",
+                        target_path, dev_cmd
+                    ))
                     .spawn()
                     .map_err(|e| format!("Failed to launch dev server: {}", e))?;
             }
@@ -314,7 +321,10 @@ pub fn launch_dev_server(
                     .creation_flags(CREATE_NEW_CONSOLE)
                     .arg("-NoExit")
                     .arg("-Command")
-                    .arg(format!("Set-Location -LiteralPath '{}'; {}", target_path, dev_cmd))
+                    .arg(format!(
+                        "Set-Location -LiteralPath '{}'; {}",
+                        target_path, dev_cmd
+                    ))
                     .spawn()
                     .map_err(|e| format!("Failed to launch dev server: {}", e))?;
             }

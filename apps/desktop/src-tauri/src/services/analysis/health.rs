@@ -1,5 +1,5 @@
-use crate::models::{GitStats, HealthCheck, HealthReport, RepoSummary};
 use super::stack::StackDetection;
+use crate::models::{GitStats, HealthCheck, HealthReport, RepoSummary};
 
 /// Inputs the score is computed from. Every field is something the analyzer
 /// already measured — the scorer itself touches no disk.
@@ -18,18 +18,66 @@ struct Rule {
 }
 
 const RULES: &[Rule] = &[
-    Rule { id: "readme", label: "Documentation", weight: 10 },
-    Rule { id: "license", label: "License", weight: 6 },
-    Rule { id: "gitignore", label: ".gitignore", weight: 5 },
-    Rule { id: "manifest", label: "Dependency manifest", weight: 5 },
-    Rule { id: "lockfile", label: "Pinned dependencies", weight: 6 },
-    Rule { id: "tests", label: "Automated tests", weight: 15 },
-    Rule { id: "ci", label: "CI pipeline", weight: 10 },
-    Rule { id: "activity", label: "Recent activity", weight: 15 },
-    Rule { id: "clean", label: "Clean working tree", weight: 8 },
-    Rule { id: "bus_factor", label: "Bus factor", weight: 8 },
-    Rule { id: "file_size", label: "File size discipline", weight: 7 },
-    Rule { id: "debt", label: "TODO density", weight: 5 },
+    Rule {
+        id: "readme",
+        label: "Documentation",
+        weight: 10,
+    },
+    Rule {
+        id: "license",
+        label: "License",
+        weight: 6,
+    },
+    Rule {
+        id: "gitignore",
+        label: ".gitignore",
+        weight: 5,
+    },
+    Rule {
+        id: "manifest",
+        label: "Dependency manifest",
+        weight: 5,
+    },
+    Rule {
+        id: "lockfile",
+        label: "Pinned dependencies",
+        weight: 6,
+    },
+    Rule {
+        id: "tests",
+        label: "Automated tests",
+        weight: 15,
+    },
+    Rule {
+        id: "ci",
+        label: "CI pipeline",
+        weight: 10,
+    },
+    Rule {
+        id: "activity",
+        label: "Recent activity",
+        weight: 15,
+    },
+    Rule {
+        id: "clean",
+        label: "Clean working tree",
+        weight: 8,
+    },
+    Rule {
+        id: "bus_factor",
+        label: "Bus factor",
+        weight: 8,
+    },
+    Rule {
+        id: "file_size",
+        label: "File size discipline",
+        weight: 7,
+    },
+    Rule {
+        id: "debt",
+        label: "TODO density",
+        weight: 5,
+    },
 ];
 
 /// Scores the repository out of 100 across twelve weighted checks. Each check
@@ -38,7 +86,10 @@ pub fn score(input: HealthInput) -> HealthReport {
     let mut checks: Vec<HealthCheck> = Vec::new();
 
     let mut push = |id: &str, earned_ratio: f64, status: &str, detail: String| {
-        let rule = RULES.iter().find(|r| r.id == id).expect("unknown health rule");
+        let rule = RULES
+            .iter()
+            .find(|r| r.id == id)
+            .expect("unknown health rule");
         checks.push(HealthCheck {
             id: rule.id.to_string(),
             label: rule.label.to_string(),
@@ -165,7 +216,11 @@ pub fn score(input: HealthInput) -> HealthReport {
         Some(git) if !git.is_dirty => (1.0, "good", "Working tree is clean".to_string()),
         Some(git) => {
             let ratio = if git.dirty_files > 20 { 0.0 } else { 0.4 };
-            let status = if git.dirty_files > 20 { "warning" } else { "info" };
+            let status = if git.dirty_files > 20 {
+                "warning"
+            } else {
+                "info"
+            };
             (
                 ratio,
                 status,
@@ -183,7 +238,11 @@ pub fn score(input: HealthInput) -> HealthReport {
                 2 => 0.7,
                 _ => 1.0,
             };
-            let status = if git.bus_factor <= 1 { "warning" } else { "good" };
+            let status = if git.bus_factor <= 1 {
+                "warning"
+            } else {
+                "good"
+            };
             (
                 ratio,
                 status,

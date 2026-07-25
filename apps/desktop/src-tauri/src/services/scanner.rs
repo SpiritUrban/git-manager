@@ -1,11 +1,14 @@
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use walkdir::WalkDir;
 use tauri::{AppHandle, Emitter};
+use walkdir::WalkDir;
 
 use crate::models::{DiscoveredRepo, ScanProgressEvent};
-use crate::services::git::{extract_git_remote_origin, is_git_repository, normalize_path, normalize_remote_url, read_package_json};
+use crate::services::git::{
+    extract_git_remote_origin, is_git_repository, normalize_path, normalize_remote_url,
+    read_package_json,
+};
 use crate::services::icons::find_local_icon;
 use crate::services::website::find_website_url;
 

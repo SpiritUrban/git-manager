@@ -4,17 +4,16 @@ pub mod services;
 #[cfg(test)]
 pub mod tests;
 
+use commands::scanner::ScanState;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use tauri_plugin_sql::{Migration, MigrationKind};
-use commands::scanner::ScanState;
 
 pub fn run() {
-    let migrations = vec![
-        Migration {
-            version: 1,
-            description: "create_initial_schema",
-            sql: "
+    let migrations = vec![Migration {
+        version: 1,
+        description: "create_initial_schema",
+        sql: "
             CREATE TABLE IF NOT EXISTS groups (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -76,9 +75,8 @@ pub fn run() {
                 value TEXT NOT NULL
             );
             ",
-            kind: MigrationKind::Up,
-        }
-    ];
+        kind: MigrationKind::Up,
+    }];
 
     tauri::Builder::default()
         .manage(ScanState(Arc::new(AtomicBool::new(false))))

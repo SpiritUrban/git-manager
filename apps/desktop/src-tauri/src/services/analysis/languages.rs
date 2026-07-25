@@ -22,7 +22,11 @@ pub struct LanguageSpec {
 }
 
 const fn lang(name: &'static str, comment: CommentStyle, is_code: bool) -> LanguageSpec {
-    LanguageSpec { name, comment, is_code }
+    LanguageSpec {
+        name,
+        comment,
+        is_code,
+    }
 }
 
 /// Extension -> language. Ordered roughly by how often it shows up in the wild;
@@ -114,13 +118,11 @@ const BY_FILENAME: &[(&str, LanguageSpec)] = &[
 
 /// Extensions that are always binary/asset — never opened for line counting.
 const BINARY_EXTENSIONS: &[&str] = &[
-    "png", "jpg", "jpeg", "gif", "webp", "avif", "ico", "icns", "bmp", "tiff", "psd", "ai",
-    "mp3", "wav", "ogg", "flac", "m4a", "mp4", "mov", "avi", "mkv", "webm",
-    "woff", "woff2", "ttf", "otf", "eot",
-    "zip", "gz", "tar", "rar", "7z", "bz2", "xz",
-    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
-    "exe", "dll", "so", "dylib", "bin", "dat", "db", "sqlite", "sqlite3",
-    "wasm", "pyc", "class", "jar", "o", "a", "lib", "pdb", "node",
+    "png", "jpg", "jpeg", "gif", "webp", "avif", "ico", "icns", "bmp", "tiff", "psd", "ai", "mp3",
+    "wav", "ogg", "flac", "m4a", "mp4", "mov", "avi", "mkv", "webm", "woff", "woff2", "ttf", "otf",
+    "eot", "zip", "gz", "tar", "rar", "7z", "bz2", "xz", "pdf", "doc", "docx", "xls", "xlsx",
+    "ppt", "pptx", "exe", "dll", "so", "dylib", "bin", "dat", "db", "sqlite", "sqlite3", "wasm",
+    "pyc", "class", "jar", "o", "a", "lib", "pdb", "node",
 ];
 
 pub enum Classification {

@@ -59,9 +59,7 @@ pub fn analyze_repository(root: &Path) -> Result<ProjectAnalysis, String> {
     }
     if let Some(outcome) = &history {
         if outcome.stats.commits_truncated {
-            notes.push(
-                "History is capped at the 10 000 most recent commits.".to_string(),
-            );
+            notes.push("History is capped at the 10 000 most recent commits.".to_string());
         }
     }
 
@@ -106,10 +104,8 @@ pub fn analyze_repository(root: &Path) -> Result<ProjectAnalysis, String> {
 /// the project rather than to an absolute line count that means nothing across
 /// languages.
 fn compute_hotspots(records: &[FileRecord], churn: &HashMap<String, FileChurn>) -> Vec<Hotspot> {
-    let by_path: HashMap<&str, &FileRecord> = records
-        .iter()
-        .map(|r| (r.rel_path.as_str(), r))
-        .collect();
+    let by_path: HashMap<&str, &FileRecord> =
+        records.iter().map(|r| (r.rel_path.as_str(), r)).collect();
 
     let max_commits = churn.values().map(|c| c.commits).max().unwrap_or(1).max(1) as f64;
     let max_lines = records
