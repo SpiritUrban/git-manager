@@ -105,6 +105,149 @@ export interface IconResolutionResult {
   icon_path?: string | null;
 }
 
+// ---------------------------------------------------------------------------
+// Project analysis (mirrors src-tauri/src/models.rs)
+// ---------------------------------------------------------------------------
+
+export interface RepoSummary {
+  total_files: number;
+  total_dirs: number;
+  total_bytes: number;
+  total_lines: number;
+  code_lines: number;
+  comment_lines: number;
+  blank_lines: number;
+  binary_files: number;
+  max_depth: number;
+  todo_count: number;
+  truncated: boolean;
+}
+
+export interface LanguageStat {
+  language: string;
+  files: number;
+  bytes: number;
+  lines: number;
+  share: number;
+}
+
+export interface MapNode {
+  name: string;
+  path: string;
+  kind: 'dir' | 'overflow';
+  files: number;
+  lines: number;
+  bytes: number;
+  weight: number;
+  language: string | null;
+  children: MapNode[];
+}
+
+export interface WeekBucket {
+  week_start: string;
+  commits: number;
+}
+
+export interface AuthorStat {
+  name: string;
+  email: string;
+  commits: number;
+  insertions: number;
+  deletions: number;
+  share: number;
+  first_commit_at: string;
+  last_commit_at: string;
+}
+
+export interface CommitSummary {
+  hash: string;
+  author: string;
+  date: string;
+  subject: string;
+  insertions: number;
+  deletions: number;
+}
+
+export interface GitStats {
+  branch: string | null;
+  is_dirty: boolean;
+  dirty_files: number;
+  total_commits: number;
+  commits_truncated: boolean;
+  first_commit_at: string | null;
+  last_commit_at: string | null;
+  age_days: number;
+  days_since_last_commit: number;
+  active_days: number;
+  commits_last_30d: number;
+  commits_last_90d: number;
+  momentum: number;
+  avg_commit_size: number;
+  weekly_activity: WeekBucket[];
+  punchcard: number[][];
+  authors: AuthorStat[];
+  bus_factor: number;
+  branches: number;
+  tags: number;
+  recent_commits: CommitSummary[];
+}
+
+export interface Hotspot {
+  path: string;
+  language: string;
+  lines: number;
+  commits: number;
+  authors: number;
+  churn: number;
+  risk: number;
+}
+
+export interface FileSummary {
+  path: string;
+  language: string;
+  lines: number;
+  bytes: number;
+}
+
+export interface StackItem {
+  name: string;
+  category: string;
+  evidence: string;
+  version: string | null;
+}
+
+export type HealthStatus = 'good' | 'warning' | 'critical' | 'info';
+
+export interface HealthCheck {
+  id: string;
+  label: string;
+  status: HealthStatus;
+  detail: string;
+  weight: number;
+  earned: number;
+}
+
+export interface HealthReport {
+  score: number;
+  grade: string;
+  checks: HealthCheck[];
+}
+
+export interface ProjectAnalysis {
+  path: string;
+  generated_at: string;
+  duration_ms: number;
+  summary: RepoSummary;
+  languages: LanguageStat[];
+  map: MapNode;
+  git: GitStats | null;
+  stack: StackItem[];
+  health: HealthReport;
+  hotspots: Hotspot[];
+  largest_files: FileSummary[];
+  notes: string[];
+}
+
 export interface DownloadAsset {
   platform: 'windows' | 'macos' | 'linux';
   architecture: 'x64' | 'arm64';

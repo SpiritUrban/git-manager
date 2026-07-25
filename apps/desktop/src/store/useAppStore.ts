@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Project, Group, Tag, ScanRoot, AppSettings, SortOption, ScanProgress, ScanSummary } from '@git-manager/shared';
+import type { Project, Group, Tag, ScanRoot, AppSettings, SortOption, ScanProgress, ScanSummary, ProjectAnalysis } from '@git-manager/shared';
 import * as db from '../services/db.js';
 import * as tauri from '../services/tauri.js';
 import { listen } from '@tauri-apps/api/event';
@@ -40,6 +40,12 @@ interface AppState {
   isScanning: boolean;
   scanProgress: ScanProgress | null;
   lastScanSummary: ScanSummary | null;
+
+  // Project Detail Page
+  openProjectId: string | null;
+  analysis: ProjectAnalysis | null;
+  isAnalyzing: boolean;
+  analysisError: string | null;
 
   // Modals & Toasts
   toast: ToastMessage | null;
@@ -88,6 +94,11 @@ interface AppState {
 
   saveTag: (tag: Partial<Tag> & { name: string; color: string }) => Promise<void>;
   deleteTag: (tagId: string) => Promise<void>;
+
+  // Project Detail Page
+  openProjectDetail: (project: Project) => Promise<void>;
+  closeProjectDetail: () => void;
+  refreshAnalysis: () => Promise<void>;
 
   // Modal Triggers
   setEditingProject: (project: Project | null) => void;
@@ -179,6 +190,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   scanProgress: null,
   lastScanSummary: null,
 
+  openProjectId: null,
+  analysis: null,
+  isAnalyzing: false,
+  analysisError: null,
+
   toast: null,
   editingProject: null,
   groupModalState: { isOpen: false, group: null },
@@ -206,7 +222,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setActiveView: (view, groupId = null, tagId = null) => {
-    set({ activeView: view, selectedGroupId: groupId, selectedTagId: tagId });
+    // Navigating the sidebar always returns to the grid.
+    set({
+      activeView: view,
+      selectedGroupId: groupId,
+      selectedTagId: tagId,
+      openProjectId: null,
+      analysis: null,
+      analysisError: null,
+      isAnalyzing: false,
+    });
   },
 
   setSearchQuery: (query) => set({ searchQuery: query }),
@@ -515,6 +540,36 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().loadTags();
     await get().loadProjects();
     get().showToast('Tag deleted', 'info');
+  },
+
+  openProjectDetail: async (project) => {
+    // Show the page immediately with the header we already have; the analysis
+    // streams in behind a skeleton.
+    set({
+      openProjectId: project.id,
+      analysis: null,
+      analysisError: null,
+      isAnalyzing: true,
+    });
+
+    try {
+      const analysis = await tauri.invokeAnalyzeProject(project.path);
+      // A different project may have been opened while this was running.
+      if (get().openProjectId !== project.id) return;
+      set({ analysis, isAnalyzing: false });
+    } catch (err: any) {
+      if (get().openProjectId !== project.id) return;
+      set({ analysisError: String(err?.message || err), isAnalyzing: false });
+    }
+  },
+
+  closeProjectDetail: () =>
+    set({ openProjectId: null, analysis: null, analysisError: null, isAnalyzing: false }),
+
+  refreshAnalysis: async () => {
+    const { openProjectId, projects, openProjectDetail } = get();
+    const project = projects.find((p) => p.id === openProjectId);
+    if (project) await openProjectDetail(project);
   },
 
   setEditingProject: (project) => set({ editingProject: project }),

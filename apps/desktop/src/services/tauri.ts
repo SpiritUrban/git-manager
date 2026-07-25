@@ -3,7 +3,7 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { check as checkUpdate, Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
-import type { ScanSummary, LaunchResult, IconResolutionResult, EditorProfileId, TerminalProfileId } from '@git-manager/shared';
+import type { ScanSummary, LaunchResult, IconResolutionResult, EditorProfileId, TerminalProfileId, ProjectAnalysis } from '@git-manager/shared';
 
 export async function selectFolderDialog(title: string = 'Select Projects Directory'): Promise<string | null> {
   try {
@@ -124,6 +124,10 @@ export async function invokeResolveProjectIcon(
 
 export async function invokeRefreshRemoteFavicon(websiteUrl: string, projectId: string): Promise<string> {
   return await invoke<string>('refresh_remote_favicon', { websiteUrl, projectId });
+}
+
+export async function invokeAnalyzeProject(path: string): Promise<ProjectAnalysis> {
+  return await invoke<ProjectAnalysis>('analyze_project', { path });
 }
 
 export async function invokeClearIconCache(): Promise<boolean> {

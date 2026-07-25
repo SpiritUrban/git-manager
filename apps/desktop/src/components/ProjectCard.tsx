@@ -27,6 +27,16 @@ interface ProjectCardProps {
   dragHandleProps?: any;
 }
 
+/** "github.com/owner/repo" -> "github.com · owner/repo" for the card subtitle. */
+function hostOf(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.hostname.replace(/^www\./, '')} · ${u.pathname.replace(/^\//, '')}`;
+  } catch {
+    return url;
+  }
+}
+
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHandleProps }) => {
   const {
     launchEditor,
@@ -39,16 +49,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
     deleteProject,
     setEditingProject,
     relinkFolder,
+    openProjectDetail,
     showToast,
   } = useAppStore();
 
   const [showContextMenu, setShowContextMenu] = useState(false);
 
-  const handleDoubleClick = () => {
-    if (!project.is_missing) {
-      launchEditor(project);
-    }
-  };
+  /** Everything interactive inside the card sits above the card-wide open handler. */
+  const stopBubble = (e: React.MouseEvent) => e.stopPropagation();
 
   const handleRefreshIcon = async () => {
     setShowContextMenu(false);
@@ -141,7 +149,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
     <div className="relative group">
       <Card
         interactive
-        onDoubleClick={handleDoubleClick}
+        role="button"
+        tabIndex={0}
+        title={`Open ${project.name} overview`}
+        onClick={() => openProjectDetail(project)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openProjectDetail(project);
+          }
+        }}
         className={`p-4 flex flex-col justify-between h-full bg-slate-900/90 border-slate-800/80 hover:border-indigo-500/50 transition-all shadow-lg ${
           project.is_missing ? 'border-rose-500/50 bg-rose-950/10' : ''
         }`}
@@ -150,26 +167,28 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
         <div>
           <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-3 min-w-0">
-              <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing">
+              <div
+                {...dragHandleProps}
+                onClick={stopBubble}
+                className="cursor-grab active:cursor-grabbing"
+              >
                 {renderIcon()}
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-slate-100 truncate tracking-tight hover:text-indigo-400 transition-colors">
-                    {project.name}
-                  </h3>
-                  {project.is_favorite && (
-                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
-                  )}
-                </div>
-                <div className="text-[11px] text-slate-400 font-mono truncate mt-0.5" title={project.path}>
-                  {project.path}
+                <h3
+                  className="text-sm font-bold text-slate-100 truncate tracking-tight group-hover:text-indigo-400 transition-colors"
+                  title={project.path}
+                >
+                  {project.name}
+                </h3>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  {project.repository_url ? hostOf(project.repository_url) : 'Local repository'}
                 </div>
               </div>
             </div>
 
             {/* Top Right Controls */}
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0" onClick={stopBubble}>
               <IconButton
                 icon={<Star className={`w-3.5 h-3.5 ${project.is_favorite ? 'fill-amber-500 text-amber-500' : 'text-slate-500'}`} />}
                 title={project.is_favorite ? 'Remove favorite' : 'Add to favorites'}
@@ -212,7 +231,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
 
         {/* Missing Relink Banner */}
         {project.is_missing && (
-          <div className="mb-3 p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-2">
+          <div
+            onClick={stopBubble}
+            className="mb-3 p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-2"
+          >
             <span className="text-[11px] text-rose-300 font-medium">Folder missing on disk</span>
             <Button size="sm" variant="danger" onClick={handleRelink}>
               Relink
@@ -221,7 +243,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
         )}
 
         {/* Action Buttons Row */}
-        <div className="grid grid-cols-5 gap-1.5 pt-2 border-t border-slate-800/80">
+        <div className="grid grid-cols-5 gap-1.5 pt-2 border-t border-slate-800/80" onClick={stopBubble}>
           <IconButton
             icon={<Play className="w-4 h-4 text-emerald-400 fill-emerald-400/20" />}
             title={project.is_missing ? 'Missing project cannot be opened' : 'Launch dev server (npm run dev)'}

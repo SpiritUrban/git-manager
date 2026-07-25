@@ -3,6 +3,7 @@ import { useAppStore } from './store/useAppStore.js';
 import { Sidebar } from './components/Sidebar.js';
 import { Topbar } from './components/Topbar.js';
 import { ProjectGrid } from './components/ProjectGrid.js';
+import { ProjectDetailView } from './components/ProjectDetailView.js';
 import { SettingsView } from './components/SettingsView.js';
 import { EmptyState } from './components/EmptyState.js';
 import { UpdaterBanner } from './components/UpdaterBanner.js';
@@ -16,13 +17,25 @@ export const App: React.FC = () => {
     projects,
     scanRoots,
     toast,
+    openProjectId,
     init,
     clearToast,
+    closeProjectDetail,
   } = useAppStore();
 
   useEffect(() => {
     init();
   }, [init]);
+
+  // Escape leaves the project detail page.
+  useEffect(() => {
+    if (!openProjectId) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeProjectDetail();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [openProjectId, closeProjectDetail]);
 
   const hasProjectsOrRoots = projects.length > 0 || scanRoots.length > 0;
 
@@ -37,14 +50,20 @@ export const App: React.FC = () => {
 
         {/* Main Content Workspace */}
         <main className="flex-1 flex flex-col min-w-0 bg-slate-950 overflow-hidden">
-          <Topbar visibleCount={projects.filter((p) => !p.is_archived).length} />
-
-          {activeView === 'settings' ? (
-            <SettingsView />
-          ) : !hasProjectsOrRoots ? (
-            <EmptyState />
+          {openProjectId ? (
+            <ProjectDetailView />
           ) : (
-            <ProjectGrid />
+            <>
+              <Topbar visibleCount={projects.filter((p) => !p.is_archived).length} />
+
+              {activeView === 'settings' ? (
+                <SettingsView />
+              ) : !hasProjectsOrRoots ? (
+                <EmptyState />
+              ) : (
+                <ProjectGrid />
+              )}
+            </>
           )}
         </main>
       </div>
