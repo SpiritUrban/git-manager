@@ -41,54 +41,56 @@ export const DownloadSection: React.FC = () => {
       .catch(() => setManifest(null));
   }, []);
 
+  // `suffix` picks the right file out of a release: platform and architecture
+  // alone are ambiguous when one platform ships two bundle formats.
   const downloadTargets = [
     {
       platform: 'windows' as const,
       arch: 'x64',
+      suffix: '-setup.exe',
       name: 'Windows x64 Setup',
       type: 'Installer (.exe)',
       icon: <Monitor className="w-5 h-5 text-blue-400" />,
-      fallbackUrl: `${PRODUCT_METADATA.releasesUrl}/latest/download/Git-Manager_0.1.0_windows_x64-setup.exe`,
     },
     {
       platform: 'windows' as const,
       arch: 'x64',
+      suffix: '.msi',
       name: 'Windows x64 MSI',
       type: 'Package (.msi)',
       icon: <Monitor className="w-5 h-5 text-blue-400" />,
-      fallbackUrl: `${PRODUCT_METADATA.releasesUrl}/latest/download/Git-Manager_0.1.0_windows_x64.msi`,
     },
     {
       platform: 'macos' as const,
       arch: 'arm64',
+      suffix: '.dmg',
       name: 'macOS Apple Silicon',
       type: 'Disk Image (.dmg)',
       icon: <Apple className="w-5 h-5 text-slate-200" />,
-      fallbackUrl: `${PRODUCT_METADATA.releasesUrl}/latest/download/Git-Manager_0.1.0_macos_arm64.dmg`,
     },
     {
       platform: 'macos' as const,
       arch: 'x64',
+      suffix: '.dmg',
       name: 'macOS Intel',
       type: 'Disk Image (.dmg)',
       icon: <Apple className="w-5 h-5 text-slate-400" />,
-      fallbackUrl: `${PRODUCT_METADATA.releasesUrl}/latest/download/Git-Manager_0.1.0_macos_x64.dmg`,
     },
     {
       platform: 'linux' as const,
       arch: 'x64',
+      suffix: '.appimage',
       name: 'Linux AppImage',
       type: 'Executable (.AppImage)',
       icon: <LinuxIcon className="w-5 h-5 text-amber-400" />,
-      fallbackUrl: `${PRODUCT_METADATA.releasesUrl}/latest/download/Git-Manager_0.1.0_linux_x64.AppImage`,
     },
     {
       platform: 'linux' as const,
       arch: 'x64',
+      suffix: '.deb',
       name: 'Linux Debian Package',
       type: 'Package (.deb)',
       icon: <LinuxIcon className="w-5 h-5 text-amber-400" />,
-      fallbackUrl: `${PRODUCT_METADATA.releasesUrl}/latest/download/Git-Manager_0.1.0_linux_x64.deb`,
     },
   ];
 
@@ -112,9 +114,14 @@ export const DownloadSection: React.FC = () => {
           {downloadTargets.map((item, idx) => {
             const isRecommended = item.platform === detectedOs;
             const matchedAsset = manifest?.assets.find(
-              (a) => a.platform === item.platform && a.architecture === item.arch
+              (a) =>
+                a.platform === item.platform &&
+                a.architecture === item.arch &&
+                a.fileName.toLowerCase().endsWith(item.suffix)
             );
-            const downloadUrl = matchedAsset?.downloadUrl || item.fallbackUrl;
+            // Without a matching asset, send people to the releases page rather
+            // than to a guessed file name that would 404.
+            const downloadUrl = matchedAsset?.downloadUrl || PRODUCT_METADATA.releasesUrl;
 
             return (
               <div

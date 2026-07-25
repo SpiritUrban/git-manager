@@ -61,38 +61,16 @@ async function generateManifest() {
   }
 }
 
+// Emitted when no published release exists yet. Listing invented asset names
+// here would give the site download links that 404; an empty list makes it fall
+// back to the releases page instead.
 function writeFallbackManifest() {
   const fallback = {
     version: '0.1.0',
     publishedAt: new Date().toISOString(),
     releasePageUrl: `https://github.com/${owner}/${repo}/releases`,
-    releaseNotes: 'Initial release build.',
-    assets: [
-      {
-        platform: 'windows',
-        architecture: 'x64',
-        fileName: 'Git-Manager_0.1.0_windows_x64-setup.exe',
-        downloadUrl: `https://github.com/${owner}/${repo}/releases/latest/download/Git-Manager_0.1.0_windows_x64-setup.exe`,
-      },
-      {
-        platform: 'macos',
-        architecture: 'arm64',
-        fileName: 'Git-Manager_0.1.0_macos_arm64.dmg',
-        downloadUrl: `https://github.com/${owner}/${repo}/releases/latest/download/Git-Manager_0.1.0_macos_arm64.dmg`,
-      },
-      {
-        platform: 'macos',
-        architecture: 'x64',
-        fileName: 'Git-Manager_0.1.0_macos_x64.dmg',
-        downloadUrl: `https://github.com/${owner}/${repo}/releases/latest/download/Git-Manager_0.1.0_macos_x64.dmg`,
-      },
-      {
-        platform: 'linux',
-        architecture: 'x64',
-        fileName: 'Git-Manager_0.1.0_linux_x64.AppImage',
-        downloadUrl: `https://github.com/${owner}/${repo}/releases/latest/download/Git-Manager_0.1.0_linux_x64.AppImage`,
-      },
-    ],
+    releaseNotes: 'No published release yet.',
+    assets: [],
   };
 
   fs.writeFileSync(outFile, JSON.stringify(fallback, null, 2) + '\n');
