@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Project, Group, Tag, ScanRoot, AppSettings, SortOption, ScanProgress, ScanSummary, ProjectAnalysis } from '@git-manager/shared';
+import { resolveRepositoryUrl } from '@git-manager/shared';
 import * as db from '../services/db.js';
 import * as tauri from '../services/tauri.js';
 import { listen } from '@tauri-apps/api/event';
@@ -79,6 +80,7 @@ interface AppState {
   launchDevServer: (project: Project) => Promise<void>;
   launchFolder: (project: Project) => Promise<void>;
   launchWebsite: (project: Project) => Promise<void>;
+  launchRepository: (project: Project) => Promise<void>;
   toggleFavorite: (project: Project) => Promise<void>;
   toggleArchived: (project: Project) => Promise<void>;
   updateProjectData: (project: Partial<Project> & { id: string }, tagIds?: string[]) => Promise<void>;
@@ -161,6 +163,41 @@ async function resolveMissingIcons(
       }),
     });
   }
+}
+
+/**
+ * Restores `repository_url` from the raw git remote for projects that are
+ * missing it. `remote_origin` survived the partial-update bug that cleared the
+ * derived URL, so this repairs existing databases without a re-scan.
+ */
+async function backfillRepositoryUrls(
+  projects: Project[],
+  set: (partial: Partial<{ projects: Project[] }>) => void,
+  get: () => { projects: Project[] }
+): Promise<void> {
+  const repairs = new Map<string, string>();
+
+  for (const project of projects) {
+    if (project.repository_url) continue;
+    const url = resolveRepositoryUrl(project);
+    if (url) repairs.set(project.id, url);
+  }
+
+  if (repairs.size === 0) return;
+
+  for (const [id, repository_url] of repairs) {
+    try {
+      await db.updateProject({ id, repository_url });
+    } catch {
+      // A failed repair just means the button stays disabled for now.
+    }
+  }
+
+  set({
+    projects: get().projects.map((p) =>
+      repairs.has(p.id) ? { ...p, repository_url: repairs.get(p.id)! } : p
+    ),
+  });
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -253,6 +290,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const projects = await db.fetchProjects();
     set({ projects });
 
+    void backfillRepositoryUrls(projects, set, get);
     // Resolve missing icons in the background so the grid renders immediately.
     void resolveMissingIcons(projects, set, get);
   },
@@ -442,6 +480,32 @@ export const useAppStore = create<AppState>((set, get) => ({
       await tauri.invokeOpenBrowserUrl(project.website_url);
     } catch (err: any) {
       get().showToast(`Failed to open website: ${err.message || err}`, 'error');
+    }
+  },
+
+  launchRepository: async (project) => {
+    const url = resolveRepositoryUrl(project);
+    if (!url) {
+      get().showToast('This project has no git remote to open', 'info');
+      return;
+    }
+
+    try {
+      await tauri.invokeOpenBrowserUrl(url);
+    } catch (err: any) {
+      get().showToast(`Failed to open repository: ${err.message || err}`, 'error');
+      return;
+    }
+
+    // The URL was derived from the raw remote — store it so the next render
+    // doesn't have to derive it again.
+    if (project.repository_url !== url) {
+      await db.updateProject({ id: project.id, repository_url: url });
+      set({
+        projects: get().projects.map((p) =>
+          p.id === project.id ? { ...p, repository_url: url } : p
+        ),
+      });
     }
   },
 

@@ -55,6 +55,37 @@ export function isValidHttpUrl(url: string | null | undefined): boolean {
 }
 
 /**
+ * The browsable repository page for a project.
+ *
+ * Prefers the normalized URL stored at scan time, but falls back to deriving one
+ * from the raw git remote — projects added before the scanner stored
+ * `repository_url`, or added by hand, only have `remote_origin`.
+ */
+export function resolveRepositoryUrl(project: {
+  repository_url?: string | null;
+  remote_origin?: string | null;
+}): string | null {
+  if (isValidHttpUrl(project.repository_url)) {
+    return project.repository_url!.trim();
+  }
+  return normalizeRemoteUrl(project.remote_origin);
+}
+
+/**
+ * Short host label for a repository URL, e.g. "github.com · owner/repo".
+ */
+export function describeRepositoryUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname.replace(/^\/|\/$/g, '');
+    const host = parsed.hostname.replace(/^www\./, '');
+    return path ? `${host} · ${path}` : host;
+  } catch {
+    return url;
+  }
+}
+
+/**
  * Extracts fallback initials from a repository/project name.
  */
 export function getFallbackInitials(name: string): string {

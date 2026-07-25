@@ -180,39 +180,61 @@ export async function updateProject(project: Partial<Project> & { id: string }):
     return;
   }
 
-  await db.execute(
-    `UPDATE projects SET
-      name = COALESCE(?, name),
-      path = COALESCE(?, path),
-      group_id = ?,
-      website_url = ?,
-      repository_url = ?,
-      icon_source = COALESCE(?, icon_source),
-      icon_cache_path = COALESCE(?, icon_cache_path),
-      is_favorite = COALESCE(?, is_favorite),
-      is_archived = COALESCE(?, is_archived),
-      is_missing = COALESCE(?, is_missing),
-      last_opened_at = COALESCE(?, last_opened_at),
-      manual_position = COALESCE(?, manual_position),
-      updated_at = ?
-    WHERE id = ?`,
-    [
-      project.name ?? null,
-      project.path ?? null,
-      project.group_id ?? null,
-      project.website_url ?? null,
-      project.repository_url ?? null,
-      project.icon_source ?? null,
-      project.icon_cache_path ?? null,
-      project.is_favorite !== undefined ? (project.is_favorite ? 1 : 0) : null,
-      project.is_archived !== undefined ? (project.is_archived ? 1 : 0) : null,
-      project.is_missing !== undefined ? (project.is_missing ? 1 : 0) : null,
-      project.last_opened_at ?? null,
-      project.manual_position !== undefined ? project.manual_position : null,
-      now,
-      project.id,
-    ]
-  );
+  const statement = buildProjectUpdate(project, now);
+  if (!statement) return;
+
+  await db.execute(statement.sql, statement.values);
+}
+
+/** Allowlist of columns `updateProject` may write — never interpolate user input. */
+const UPDATABLE_COLUMNS = [
+  'name',
+  'path',
+  'normalized_path',
+  'group_id',
+  'manual_position',
+  'website_url',
+  'repository_url',
+  'remote_origin',
+  'icon_source',
+  'icon_cache_path',
+  'is_favorite',
+  'is_archived',
+  'is_missing',
+  'last_opened_at',
+] as const;
+
+/**
+ * Builds a partial UPDATE touching only the columns the caller actually passed.
+ *
+ * `group_id`, `website_url` and `repository_url` are nullable and legitimately
+ * clearable from the edit modal, so they cannot use COALESCE — which means they
+ * must be omitted entirely when absent. Writing them unconditionally is what
+ * silently wiped them on every favorite toggle, archive and launch.
+ */
+export function buildProjectUpdate(
+  project: Partial<Project> & { id: string },
+  now: string
+): { sql: string; values: unknown[] } | null {
+  const assignments: string[] = [];
+  const values: unknown[] = [];
+
+  for (const column of UPDATABLE_COLUMNS) {
+    if (!(column in project)) continue;
+    const value = (project as Record<string, unknown>)[column];
+    assignments.push(`${column} = ?`);
+    values.push(typeof value === 'boolean' ? (value ? 1 : 0) : value ?? null);
+  }
+
+  if (assignments.length === 0) return null;
+
+  assignments.push('updated_at = ?');
+  values.push(now, project.id);
+
+  return {
+    sql: `UPDATE projects SET ${assignments.join(', ')} WHERE id = ?`,
+    values,
+  };
 }
 
 export async function deleteProjectFromDb(id: string): Promise<void> {

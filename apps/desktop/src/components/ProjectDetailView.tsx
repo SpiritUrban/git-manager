@@ -4,11 +4,11 @@ import {
   ArrowLeft,
   Code2,
   Copy,
-  ExternalLink,
   FileCode2,
   FolderGit2,
   GitBranch,
   GitCommitHorizontal,
+  Github,
   Globe,
   HardDrive,
   Pencil,
@@ -19,10 +19,13 @@ import {
   Users,
 } from 'lucide-react';
 import { Badge, Button, Callout, IconButton } from '@git-manager/ui';
-import { getFallbackInitials } from '@git-manager/shared';
+import {
+  describeRepositoryUrl,
+  getFallbackInitials,
+  resolveRepositoryUrl,
+} from '@git-manager/shared';
 import type { Project } from '@git-manager/shared';
 import { useAppStore } from '../store/useAppStore.js';
-import * as tauri from '../services/tauri.js';
 import { ActivityChart, LanguageBar, Punchcard, ShareBar } from './detail/Charts.js';
 import { HealthPanel, HotspotTable, Section, StackPanel, StatTile } from './detail/Panels.js';
 import { ProjectMap } from './detail/ProjectMap.js';
@@ -51,6 +54,7 @@ export const ProjectDetailView: React.FC = () => {
     launchDevServer,
     launchFolder,
     launchWebsite,
+    launchRepository,
     toggleFavorite,
     setEditingProject,
     showToast,
@@ -69,6 +73,7 @@ export const ProjectDetailView: React.FC = () => {
   if (!project) return null;
 
   const git = analysis?.git ?? null;
+  const repositoryUrl = resolveRepositoryUrl(project);
 
   const copyPath = async () => {
     try {
@@ -169,14 +174,19 @@ export const ProjectDetailView: React.FC = () => {
               disabled={!project.website_url}
               onClick={() => launchWebsite(project)}
             />
-            {project.repository_url && (
-              <IconButton
-                icon={<ExternalLink className="w-4 h-4 text-slate-400" />}
-                title="Open repository page"
-                variant="secondary"
-                onClick={() => tauri.invokeOpenBrowserUrl(project.repository_url!)}
-              />
-            )}
+            <IconButton
+              icon={
+                <Github className={`w-4 h-4 ${repositoryUrl ? 'text-slate-300' : 'text-slate-600'}`} />
+              }
+              title={
+                repositoryUrl
+                  ? `Open repository page (${describeRepositoryUrl(repositoryUrl)})`
+                  : 'No git remote configured'
+              }
+              variant="secondary"
+              disabled={!repositoryUrl}
+              onClick={() => launchRepository(project)}
+            />
             <IconButton
               icon={<Pencil className="w-4 h-4 text-slate-400" />}
               title="Edit project details"

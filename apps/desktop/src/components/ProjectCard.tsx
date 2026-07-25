@@ -3,6 +3,8 @@ import {
   Code2,
   Terminal,
   Folder,
+  GitBranch,
+  Github,
   Globe,
   Star,
   MoreVertical,
@@ -17,7 +19,7 @@ import {
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { Card, Badge, IconButton, Button } from '@git-manager/ui';
 import type { Project, Group } from '@git-manager/shared';
-import { getFallbackInitials } from '@git-manager/shared';
+import { describeRepositoryUrl, getFallbackInitials, resolveRepositoryUrl } from '@git-manager/shared';
 import { useAppStore } from '../store/useAppStore.js';
 import * as tauri from '../services/tauri.js';
 
@@ -27,14 +29,11 @@ interface ProjectCardProps {
   dragHandleProps?: any;
 }
 
-/** "github.com/owner/repo" -> "github.com · owner/repo" for the card subtitle. */
-function hostOf(url: string): string {
-  try {
-    const u = new URL(url);
-    return `${u.hostname.replace(/^www\./, '')} · ${u.pathname.replace(/^\//, '')}`;
-  } catch {
-    return url;
-  }
+/** GitHub gets its own mark; every other host falls back to a generic git icon. */
+function repositoryIcon(url: string | null): React.ReactNode {
+  const isGithub = url?.includes('github.com') ?? false;
+  const Icon = isGithub ? Github : GitBranch;
+  return <Icon className={`w-4 h-4 ${url ? 'text-slate-300' : 'text-slate-600'}`} />;
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHandleProps }) => {
@@ -44,6 +43,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
     launchDevServer,
     launchFolder,
     launchWebsite,
+    launchRepository,
     toggleFavorite,
     toggleArchived,
     deleteProject,
@@ -57,6 +57,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
 
   /** Everything interactive inside the card sits above the card-wide open handler. */
   const stopBubble = (e: React.MouseEvent) => e.stopPropagation();
+
+  // Falls back to deriving the page from the raw git remote, so the button works
+  // even for projects whose stored URL was never filled in.
+  const repositoryUrl = resolveRepositoryUrl(project);
 
   const handleRefreshIcon = async () => {
     setShowContextMenu(false);
@@ -181,8 +185,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
                 >
                   {project.name}
                 </h3>
-                <div className="text-[11px] text-slate-500 mt-0.5">
-                  {project.repository_url ? hostOf(project.repository_url) : 'Local repository'}
+                <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                  {repositoryUrl ? describeRepositoryUrl(repositoryUrl) : 'Local repository'}
                 </div>
               </div>
             </div>
@@ -243,7 +247,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
         )}
 
         {/* Action Buttons Row */}
-        <div className="grid grid-cols-5 gap-1.5 pt-2 border-t border-slate-800/80" onClick={stopBubble}>
+        {/* Six actions in two rows of three: a single row of six overflows the
+            card at the 4-column grid width, and wrapping is width-independent. */}
+        <div
+          className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-800/80"
+          onClick={stopBubble}
+        >
           <IconButton
             icon={<Play className="w-4 h-4 text-emerald-400 fill-emerald-400/20" />}
             title={project.is_missing ? 'Missing project cannot be opened' : 'Launch dev server (npm run dev)'}
@@ -283,6 +292,18 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
             size="md"
             disabled={!project.website_url}
             onClick={() => launchWebsite(project)}
+          />
+          <IconButton
+            icon={repositoryIcon(repositoryUrl)}
+            title={
+              repositoryUrl
+                ? `Open repository page (${describeRepositoryUrl(repositoryUrl)})`
+                : 'No git remote configured'
+            }
+            variant="secondary"
+            size="md"
+            disabled={!repositoryUrl}
+            onClick={() => launchRepository(project)}
           />
         </div>
       </Card>
@@ -345,16 +366,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
             Open folder
           </button>
 
-          {project.repository_url && (
+          {repositoryUrl && (
             <button
               onClick={() => {
                 setShowContextMenu(false);
-                tauri.invokeOpenBrowserUrl(project.repository_url!);
+                launchRepository(project);
               }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-200 hover:bg-slate-800"
             >
               <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
-              Open repository web URL
+              Open repository page
             </button>
           )}
 

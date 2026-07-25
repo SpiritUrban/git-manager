@@ -1,5 +1,57 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeRemoteUrl, isValidHttpUrl, getFallbackInitials } from '../url-utils.js';
+import {
+  normalizeRemoteUrl,
+  isValidHttpUrl,
+  getFallbackInitials,
+  resolveRepositoryUrl,
+  describeRepositoryUrl,
+} from '../url-utils.js';
+
+describe('resolveRepositoryUrl', () => {
+  it('prefers the stored repository URL', () => {
+    expect(
+      resolveRepositoryUrl({
+        repository_url: 'https://github.com/owner/repo',
+        remote_origin: 'git@gitlab.com:other/thing.git',
+      })
+    ).toBe('https://github.com/owner/repo');
+  });
+
+  it('derives one from the raw remote when the stored URL is missing', () => {
+    expect(
+      resolveRepositoryUrl({
+        repository_url: null,
+        remote_origin: 'git@github.com:SpiritUrban/git-manager.git',
+      })
+    ).toBe('https://github.com/SpiritUrban/git-manager');
+  });
+
+  it('ignores a stored value that is not a usable http URL', () => {
+    expect(
+      resolveRepositoryUrl({
+        repository_url: '   ',
+        remote_origin: 'https://github.com/owner/repo.git',
+      })
+    ).toBe('https://github.com/owner/repo');
+  });
+
+  it('returns null for a project with no remote at all', () => {
+    expect(resolveRepositoryUrl({ repository_url: null, remote_origin: null })).toBeNull();
+    expect(resolveRepositoryUrl({})).toBeNull();
+  });
+});
+
+describe('describeRepositoryUrl', () => {
+  it('renders host and path without the www prefix', () => {
+    expect(describeRepositoryUrl('https://www.github.com/owner/repo')).toBe(
+      'github.com · owner/repo'
+    );
+  });
+
+  it('falls back to the raw string when the URL will not parse', () => {
+    expect(describeRepositoryUrl('not a url')).toBe('not a url');
+  });
+});
 
 describe('url-utils', () => {
   describe('normalizeRemoteUrl', () => {
