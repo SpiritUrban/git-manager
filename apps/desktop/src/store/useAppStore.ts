@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Project, Group, Tag, ScanRoot, AppSettings, SortOption, ScanProgress, ScanSummary, ProjectAnalysis } from '@git-manager/shared';
-import { resolveRepositoryUrl } from '@git-manager/shared';
+import { isInfrastructureUrl, pointsAtRepository, resolveRepositoryUrl } from '@git-manager/shared';
 import * as db from '../services/db.js';
 import * as tauri from '../services/tauri.js';
 import { listen } from '@tauri-apps/api/event';
@@ -108,61 +108,114 @@ interface AppState {
   setTagModalState: (isOpen: boolean, tag?: Tag | null) => void;
 }
 
-/** Projects whose icon resolution already ran (or is running) this session. */
-const iconResolutionAttempted = new Set<string>();
+/** Projects already enriched (or being enriched) this session. */
+const enrichmentAttempted = new Set<string>();
 
 /**
- * Resolves favicons for projects that don't have one yet: first a local icon file
- * inside the repo (public/favicon.ico and friends), then the remote favicon of
- * website_url. Runs detached from loadProjects so the grid is never blocked, and
- * patches the store per project as results arrive.
+ * Fills in the metadata the scanner could not, or filled in wrongly.
+ *
+ * Two things per project: the favicon (a local icon file in the repo, else the
+ * remote favicon of its site) and the website URL (scanned from CNAME, .env,
+ * framework configs and package.json). Runs detached from loadProjects so the
+ * grid is never blocked, and patches the store per batch as results land.
  */
-async function resolveMissingIcons(
+async function enrichProjects(
   projects: Project[],
   set: (partial: Partial<{ projects: Project[] }>) => void,
   get: () => { projects: Project[] }
 ): Promise<void> {
   const pending = projects.filter(
-    (p) => !p.icon_cache_path && !p.is_missing && !iconResolutionAttempted.has(p.id)
+    (p) => !p.is_missing && !enrichmentAttempted.has(p.id) && needsEnrichment(p)
   );
   if (pending.length === 0) return;
 
   for (const p of pending) {
-    iconResolutionAttempted.add(p.id);
+    enrichmentAttempted.add(p.id);
   }
 
   const CONCURRENCY = 6;
   for (let i = 0; i < pending.length; i += CONCURRENCY) {
     const batch = pending.slice(i, i + CONCURRENCY);
-    const resolved = await Promise.all(
-      batch.map(async (p) => {
-        try {
-          const res = await tauri.invokeResolveProjectIcon(p.path, p.website_url, p.id);
-          if (!res.icon_path) return null;
-          const icon_source = res.icon_source as Project['icon_source'];
-          await db.updateProject({ id: p.id, icon_source, icon_cache_path: res.icon_path });
-          return { id: p.id, icon_source, icon_cache_path: res.icon_path };
-        } catch {
-          // Leave the project on initials; a manual "Refresh favicon" can retry.
-          return null;
-        }
-      })
-    );
+    const resolved = await Promise.all(batch.map(enrichOne));
 
     const patches = new Map(
-      resolved.filter((r): r is NonNullable<typeof r> => r !== null).map((r) => [r.id, r])
+      resolved.filter((r): r is NonNullable<typeof r> => r !== null).map((r) => [r.id, r.patch])
     );
     if (patches.size === 0) continue;
 
     set({
       projects: get().projects.map((p) => {
         const patch = patches.get(p.id);
-        return patch
-          ? { ...p, icon_source: patch.icon_source, icon_cache_path: patch.icon_cache_path }
-          : p;
+        return patch ? { ...p, ...patch } : p;
       }),
     });
   }
+}
+
+function needsEnrichment(project: Project): boolean {
+  return !project.icon_cache_path || !project.website_url || hasBogusWebsite(project);
+}
+
+/**
+ * True when the stored website URL is provably not a website. Both shapes were
+ * written by the scanner, not by the user: the `npm init` homepage default that
+ * links back to the repository, and a managed-backend endpoint picked up from a
+ * `.env` key whose name looked like a site URL.
+ */
+function hasBogusWebsite(project: Project): boolean {
+  return (
+    pointsAtRepository(project.website_url, project.repository_url) ||
+    isInfrastructureUrl(project.website_url)
+  );
+}
+
+async function enrichOne(
+  project: Project
+): Promise<{ id: string; patch: Partial<Project> } | null> {
+  const patch: Partial<Project> = {};
+
+  const storedSiteIsBogus = hasBogusWebsite(project);
+
+  if (!project.website_url || storedSiteIsBogus) {
+    try {
+      const found = await tauri.invokeResolveProjectWebsite(project.path, project.repository_url);
+      if (found) {
+        patch.website_url = found.url;
+      } else if (storedSiteIsBogus) {
+        // Nothing better exists and the stored value provably is not a site.
+        patch.website_url = null;
+      }
+    } catch {
+      // Detection is best-effort; the edit modal is always available.
+    }
+  }
+
+  if (!project.icon_cache_path) {
+    try {
+      const websiteForFavicon = patch.website_url ?? project.website_url;
+      const res = await tauri.invokeResolveProjectIcon(
+        project.path,
+        websiteForFavicon,
+        project.id
+      );
+      if (res.icon_path) {
+        patch.icon_source = res.icon_source as Project['icon_source'];
+        patch.icon_cache_path = res.icon_path;
+      }
+    } catch {
+      // Leave the project on initials; "Refresh favicon" can retry.
+    }
+  }
+
+  if (Object.keys(patch).length === 0) return null;
+
+  try {
+    await db.updateProject({ id: project.id, ...patch });
+  } catch {
+    return null;
+  }
+
+  return { id: project.id, patch };
 }
 
 /**
@@ -290,9 +343,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const projects = await db.fetchProjects();
     set({ projects });
 
+    // Both run detached so the grid renders immediately.
     void backfillRepositoryUrls(projects, set, get);
-    // Resolve missing icons in the background so the grid renders immediately.
-    void resolveMissingIcons(projects, set, get);
+    void enrichProjects(projects, set, get);
   },
 
   loadGroups: async () => {

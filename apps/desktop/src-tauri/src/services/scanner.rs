@@ -7,6 +7,7 @@ use tauri::{AppHandle, Emitter};
 use crate::models::{DiscoveredRepo, ScanProgressEvent};
 use crate::services::git::{extract_git_remote_origin, is_git_repository, normalize_path, normalize_remote_url, read_package_json};
 use crate::services::icons::find_local_icon;
+use crate::services::website::find_website_url;
 
 pub static SCAN_CANCELLED: AtomicBool = AtomicBool::new(false);
 
@@ -52,6 +53,8 @@ pub fn scan_directory_for_repos(
         let remote_origin = extract_git_remote_origin(root_path);
         let repository_url = remote_origin.as_deref().and_then(normalize_remote_url);
         let local_icon = find_local_icon(root_path);
+        let website_url =
+            find_website_url(root_path, repository_url.as_deref()).map(|found| found.url);
 
         repos.push(DiscoveredRepo {
             path: display_path,
@@ -59,7 +62,7 @@ pub fn scan_directory_for_repos(
             name: final_name,
             remote_origin,
             repository_url,
-            website_url: pkg_info.homepage,
+            website_url,
             icon_path: local_icon,
         });
 
@@ -119,6 +122,8 @@ pub fn scan_directory_for_repos(
                 let remote_origin = extract_git_remote_origin(path);
                 let repository_url = remote_origin.as_deref().and_then(normalize_remote_url);
                 let local_icon = find_local_icon(path);
+                let website_url =
+                    find_website_url(path, repository_url.as_deref()).map(|found| found.url);
 
                 repos.push(DiscoveredRepo {
                     path: display_path,
@@ -126,7 +131,7 @@ pub fn scan_directory_for_repos(
                     name: final_name,
                     remote_origin,
                     repository_url,
-                    website_url: pkg_info.homepage,
+                    website_url,
                     icon_path: local_icon,
                 });
 

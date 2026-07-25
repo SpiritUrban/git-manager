@@ -105,6 +105,12 @@ export interface IconResolutionResult {
   icon_path?: string | null;
 }
 
+export interface WebsiteDetection {
+  url: string;
+  /** Which file the URL came from, so the guess is auditable. */
+  source: string;
+}
+
 // ---------------------------------------------------------------------------
 // Project analysis (mirrors src-tauri/src/models.rs)
 // ---------------------------------------------------------------------------

@@ -105,6 +105,7 @@ pub fn run() {
             commands::favicons::resolve_project_icon,
             commands::favicons::refresh_remote_favicon,
             commands::analysis::analyze_project,
+            commands::website::resolve_project_website,
             commands::system::clear_icon_cache,
             commands::system::get_app_data_dir_path
         ])

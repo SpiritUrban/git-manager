@@ -6,56 +6,16 @@ use reqwest::header::CONTENT_TYPE;
 use tauri::AppHandle;
 use tauri::Manager;
 
-/// Sub-directories that commonly hold the actual web app in a monorepo layout.
-/// Searched after the repo root, in this order.
-const NESTED_APP_DIRS: [&str; 10] = [
-    "apps/web",
-    "apps/desktop",
-    "apps/client",
-    "packages/web",
-    "client",
-    "frontend",
-    "web",
-    "www",
-    "site",
-    "ui",
-];
+use crate::services::project_dirs::app_roots;
 
+/// Searches the repo root first, then the conventional app sub-directories —
+/// a monorepo's favicon lives in `apps/web/public`, never at the top.
 pub fn find_local_icon(repo_dir: &Path) -> Option<String> {
-    if let Some(found) = find_icon_in(repo_dir) {
-        return Some(found);
-    }
-
-    for nested in NESTED_APP_DIRS {
-        let nested_dir = repo_dir.join(nested);
-        if nested_dir.is_dir() {
-            if let Some(found) = find_icon_in(&nested_dir) {
-                return Some(found);
-            }
-        }
-    }
-
-    // Last resort: any first-level sub-directory that looks like an app
-    // (has a package.json) — covers apps/<name>, packages/<name>, etc.
-    for group in ["apps", "packages"] {
-        let group_dir = repo_dir.join(group);
-        let Ok(entries) = fs::read_dir(&group_dir) else {
-            continue;
-        };
-        let mut dirs: Vec<_> = entries
-            .flatten()
-            .map(|e| e.path())
-            .filter(|p| p.is_dir() && p.join("package.json").is_file())
-            .collect();
-        dirs.sort();
-        for dir in dirs {
-            if let Some(found) = find_icon_in(&dir) {
-                return Some(found);
-            }
-        }
-    }
-
-    None
+    app_roots(repo_dir, |dir| {
+        dir.join("package.json").is_file() || dir.join("public").is_dir()
+    })
+    .into_iter()
+    .find_map(|(_, dir)| find_icon_in(&dir))
 }
 
 fn find_icon_in(repo_dir: &Path) -> Option<String> {

@@ -5,6 +5,7 @@ use std::path::Path;
 use serde_json::Value;
 
 use crate::models::StackItem;
+use crate::services::project_dirs::{app_roots, has_manifest};
 
 /// Marker file -> (technology, category). Presence of the file is the evidence.
 const FILE_MARKERS: &[(&str, &str, &str)] = &[
@@ -133,51 +134,6 @@ pub struct StackDetection {
     pub has_manifest: bool,
 }
 
-/// Directories that commonly hold a workspace member's own manifest. A monorepo
-/// keeps its real stack one or two levels down, so detecting only at the repo
-/// root would report almost nothing for exactly the projects that need it most.
-fn manifest_roots(root: &Path) -> Vec<(String, std::path::PathBuf)> {
-    let mut roots: Vec<(String, std::path::PathBuf)> = vec![(String::new(), root.to_path_buf())];
-
-    let consider = |prefix: String, dir: std::path::PathBuf, roots: &mut Vec<_>| {
-        let has_manifest = ["package.json", "Cargo.toml", "go.mod", "pyproject.toml"]
-            .iter()
-            .any(|m| dir.join(m).is_file());
-        if has_manifest {
-            roots.push((prefix, dir));
-        }
-    };
-
-    for name in ["client", "frontend", "backend", "server", "web", "src-tauri", "api"] {
-        let dir = root.join(name);
-        if dir.is_dir() {
-            consider(format!("{}/", name), dir, &mut roots);
-        }
-    }
-
-    for group in ["apps", "packages", "services"] {
-        let Ok(entries) = fs::read_dir(root.join(group)) else {
-            continue;
-        };
-        let mut dirs: Vec<_> = entries.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
-        dirs.sort();
-        for dir in dirs.into_iter().take(12) {
-            let Some(name) = dir.file_name().and_then(|n| n.to_str()) else {
-                continue;
-            };
-            let prefix = format!("{}/{}/", group, name);
-            // One more level down covers apps/desktop/src-tauri.
-            let tauri_dir = dir.join("src-tauri");
-            if tauri_dir.is_dir() {
-                consider(format!("{}src-tauri/", prefix), tauri_dir, &mut roots);
-            }
-            consider(prefix, dir, &mut roots);
-        }
-    }
-
-    roots
-}
-
 pub fn detect(root: &Path, file_paths: &[String]) -> StackDetection {
     // BTreeMap keeps the output deterministic and de-duplicated by name.
     let mut found: BTreeMap<String, StackItem> = BTreeMap::new();
@@ -197,7 +153,7 @@ pub fn detect(root: &Path, file_paths: &[String]) -> StackDetection {
         }
     };
 
-    let roots = manifest_roots(root);
+    let roots = app_roots(root, has_manifest);
 
     for (prefix, dir) in &roots {
         for (marker, name, category) in FILE_MARKERS {

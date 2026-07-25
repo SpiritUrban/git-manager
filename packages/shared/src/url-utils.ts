@@ -72,6 +72,84 @@ export function resolveRepositoryUrl(project: {
 }
 
 /**
+ * Host suffixes belonging to managed backends. Mirrors `INFRA_HOST_SUFFIXES` in
+ * `src-tauri/src/services/website.rs`; the Rust list stops such a URL from being
+ * detected, this one repairs values stored before that check existed.
+ */
+const INFRASTRUCTURE_HOST_SUFFIXES = [
+  '.supabase.co',
+  '.supabase.in',
+  '.firebaseio.com',
+  '.firebasedatabase.app',
+  '.mongodb.net',
+  '.documents.azure.com',
+  '.amazonaws.com',
+  '.upstash.io',
+  '.neon.tech',
+  '.planetscale.com',
+  '.turso.io',
+  '.cockroachlabs.cloud',
+  '.clickhouse.cloud',
+  '.elastic-cloud.com',
+  '.sentry.io',
+  '.redislabs.com',
+  '.pusher.com',
+  '.algolia.net',
+];
+
+/**
+ * True when a URL points at a managed backend rather than a website.
+ *
+ * A database or error-tracking endpoint is never what the website button should
+ * open, so a stored value like `https://<ref>.supabase.co` is wrong regardless
+ * of how it got there.
+ */
+export function isInfrastructureUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return INFRASTRUCTURE_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * True when a stored website URL is really just the repository link.
+ *
+ * `npm init` defaults `homepage` to `https://github.com/owner/repo#readme`, and
+ * the scanner used to copy that into `website_url` — which makes the website
+ * button a duplicate of the repository button rather than a link to a site.
+ */
+export function pointsAtRepository(
+  websiteUrl: string | null | undefined,
+  repositoryUrl: string | null | undefined
+): boolean {
+  if (!websiteUrl) return false;
+
+  const key = (raw: string): string | null => {
+    try {
+      const parsed = new URL(raw);
+      const host = parsed.hostname.replace(/^www\./, '').toLowerCase();
+      const path = parsed.pathname.replace(/\/+$/, '').toLowerCase();
+      return `${host}${path}`;
+    } catch {
+      return null;
+    }
+  };
+
+  const site = key(websiteUrl);
+  if (!site) return false;
+
+  // Any URL on a code host is a repository link, not a website.
+  const CODE_HOSTS = ['github.com/', 'gitlab.com/', 'bitbucket.org/', 'codeberg.org/'];
+  if (CODE_HOSTS.some((host) => site.startsWith(host))) return true;
+
+  const repo = repositoryUrl ? key(repositoryUrl) : null;
+  return repo !== null && site === repo;
+}
+
+/**
  * Short host label for a repository URL, e.g. "github.com · owner/repo".
  */
 export function describeRepositoryUrl(url: string): string {

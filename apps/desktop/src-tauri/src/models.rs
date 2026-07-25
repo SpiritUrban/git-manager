@@ -36,6 +36,13 @@ pub struct IconResolutionResult {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WebsiteDetection {
+    pub url: String,
+    /// Which file the URL came from, shown so the guess is auditable.
+    pub source: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LaunchResult {
     pub success: bool,
     pub error: Option<String>,

@@ -5,6 +5,8 @@ import {
   getFallbackInitials,
   resolveRepositoryUrl,
   describeRepositoryUrl,
+  pointsAtRepository,
+  isInfrastructureUrl,
 } from '../url-utils.js';
 
 describe('resolveRepositoryUrl', () => {
@@ -38,6 +40,56 @@ describe('resolveRepositoryUrl', () => {
   it('returns null for a project with no remote at all', () => {
     expect(resolveRepositoryUrl({ repository_url: null, remote_origin: null })).toBeNull();
     expect(resolveRepositoryUrl({})).toBeNull();
+  });
+});
+
+describe('isInfrastructureUrl', () => {
+  it('flags managed backend endpoints', () => {
+    expect(isInfrastructureUrl('https://lrodjzakzfqgdcjazdty.supabase.co')).toBe(true);
+    expect(isInfrastructureUrl('https://cluster0.mongodb.net/db')).toBe(true);
+    expect(isInfrastructureUrl('https://org.sentry.io')).toBe(true);
+    expect(isInfrastructureUrl('https://bucket.s3.eu-central-1.amazonaws.com')).toBe(true);
+  });
+
+  it('leaves ordinary sites alone', () => {
+    expect(isInfrastructureUrl('https://my-transfer.com.ua')).toBe(false);
+    expect(isInfrastructureUrl('https://spiriturban.github.io/books-online')).toBe(false);
+    // A lookalike that is not actually on the backend host.
+    expect(isInfrastructureUrl('https://supabase.co.my-site.dev')).toBe(false);
+  });
+
+  it('is false for missing or unparsable input', () => {
+    expect(isInfrastructureUrl(null)).toBe(false);
+    expect(isInfrastructureUrl('not a url')).toBe(false);
+  });
+});
+
+describe('pointsAtRepository', () => {
+  it('flags the npm init homepage default', () => {
+    expect(
+      pointsAtRepository(
+        'https://github.com/SpiritUrban/cheknis#readme',
+        'https://github.com/SpiritUrban/cheknis'
+      )
+    ).toBe(true);
+  });
+
+  it('flags any code-host URL even without a repository to compare against', () => {
+    expect(pointsAtRepository('https://gitlab.com/group/project', null)).toBe(true);
+    expect(pointsAtRepository('https://bitbucket.org/user/repo', undefined)).toBe(true);
+  });
+
+  it('leaves a real website alone', () => {
+    expect(
+      pointsAtRepository('https://my-transfer.com.ua', 'https://github.com/owner/repo')
+    ).toBe(false);
+    // github.io is a site, not a code host.
+    expect(pointsAtRepository('https://spiriturban.github.io/books-online/', null)).toBe(false);
+  });
+
+  it('is false for a missing or unparsable website', () => {
+    expect(pointsAtRepository(null, 'https://github.com/owner/repo')).toBe(false);
+    expect(pointsAtRepository('not a url', 'https://github.com/owner/repo')).toBe(false);
   });
 });
 
