@@ -80,7 +80,6 @@ pub fn launch_terminal(
     {
         match profile {
             "wt" | "auto" => {
-                // Attempt Windows Terminal via start command or direct wt.exe
                 let wt_res = Command::new("cmd.exe")
                     .creation_flags(CREATE_NEW_CONSOLE)
                     .arg("/c")
@@ -95,7 +94,6 @@ pub fn launch_terminal(
                     return Ok(());
                 }
 
-                // Fallback to independent PowerShell window
                 Command::new("powershell.exe")
                     .creation_flags(CREATE_NEW_CONSOLE)
                     .arg("-NoExit")
@@ -224,6 +222,129 @@ pub fn launch_terminal(
                     .map_err(|e| format!("Failed to launch gnome-terminal: {}", e))?;
             }
         }
+    }
+
+    Ok(())
+}
+
+pub fn launch_dev_server(
+    profile: &str,
+    custom_exec: &str,
+    custom_args: &[String],
+    target_path: &str,
+) -> Result<(), String> {
+    let path_obj = Path::new(target_path);
+    if !path_obj.exists() {
+        return Err(format!("Target directory does not exist: {}", target_path));
+    }
+
+    // Determine package manager dev command from lockfiles or package.json
+    let dev_cmd = if path_obj.join("pnpm-lock.yaml").exists() {
+        "pnpm dev"
+    } else if path_obj.join("yarn.lock").exists() {
+        "yarn dev"
+    } else if path_obj.join("bun.lockb").exists() || path_obj.join("bun.lock").exists() {
+        "bun run dev"
+    } else {
+        "npm run dev"
+    };
+
+    #[cfg(target_os = "windows")]
+    {
+        match profile {
+            "wt" | "auto" => {
+                let wt_res = Command::new("cmd.exe")
+                    .creation_flags(CREATE_NEW_CONSOLE)
+                    .arg("/c")
+                    .arg("start")
+                    .arg("")
+                    .arg("wt.exe")
+                    .arg("-d")
+                    .arg(target_path)
+                    .arg("powershell.exe")
+                    .arg("-NoExit")
+                    .arg("-Command")
+                    .arg(dev_cmd)
+                    .spawn();
+
+                if wt_res.is_ok() {
+                    return Ok(());
+                }
+
+                Command::new("powershell.exe")
+                    .creation_flags(CREATE_NEW_CONSOLE)
+                    .arg("-NoExit")
+                    .arg("-Command")
+                    .arg(format!("Set-Location -LiteralPath '{}'; {}", target_path, dev_cmd))
+                    .spawn()
+                    .map_err(|e| format!("Failed to launch dev server: {}", e))?;
+            }
+            "powershell" => {
+                Command::new("powershell.exe")
+                    .creation_flags(CREATE_NEW_CONSOLE)
+                    .arg("-NoExit")
+                    .arg("-Command")
+                    .arg(format!("Set-Location -LiteralPath '{}'; {}", target_path, dev_cmd))
+                    .spawn()
+                    .map_err(|e| format!("Failed to launch dev server: {}", e))?;
+            }
+            "cmd" => {
+                Command::new("cmd.exe")
+                    .creation_flags(CREATE_NEW_CONSOLE)
+                    .arg("/k")
+                    .arg(format!("cd /d \"{}\" && {}", target_path, dev_cmd))
+                    .spawn()
+                    .map_err(|e| format!("Failed to launch dev server: {}", e))?;
+            }
+            "custom" => {
+                if custom_exec.trim().is_empty() {
+                    return Err("Custom terminal executable is not configured.".to_string());
+                }
+                let mut cmd = Command::new(custom_exec);
+                cmd.creation_flags(CREATE_NEW_CONSOLE);
+                cmd.current_dir(target_path);
+                for arg in custom_args {
+                    cmd.arg(arg.replace("{path}", target_path));
+                }
+                cmd.spawn()
+                    .map_err(|e| format!("Failed to launch custom dev server: {}", e))?;
+            }
+            _ => {
+                Command::new("powershell.exe")
+                    .creation_flags(CREATE_NEW_CONSOLE)
+                    .arg("-NoExit")
+                    .arg("-Command")
+                    .arg(format!("Set-Location -LiteralPath '{}'; {}", target_path, dev_cmd))
+                    .spawn()
+                    .map_err(|e| format!("Failed to launch dev server: {}", e))?;
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let script = format!(
+            "tell application \"Terminal\" to do script \"cd \\\"{}\\\" && {}\"",
+            target_path, dev_cmd
+        );
+        Command::new("osascript")
+            .arg("-e")
+            .arg(script)
+            .spawn()
+            .map_err(|e| format!("Failed to launch dev server: {}", e))?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("gnome-terminal")
+            .arg("--working-directory")
+            .arg(target_path)
+            .arg("--")
+            .arg("bash")
+            .arg("-c")
+            .arg(format!("{}; exec bash", dev_cmd))
+            .spawn()
+            .map_err(|e| format!("Failed to launch dev server: {}", e))?;
     }
 
     Ok(())

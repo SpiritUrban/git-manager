@@ -12,6 +12,7 @@ import {
   RefreshCcw,
   Trash2,
   ExternalLink,
+  Play,
 } from 'lucide-react';
 import { Card, Badge, IconButton, Button } from '@git-manager/ui';
 import type { Project, Group } from '@git-manager/shared';
@@ -29,6 +30,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
   const {
     launchEditor,
     launchTerminal,
+    launchDevServer,
     launchFolder,
     launchWebsite,
     toggleFavorite,
@@ -37,11 +39,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
     setEditingProject,
     relinkFolder,
     showToast,
-    loadProjects,
   } = useAppStore();
 
   const [showContextMenu, setShowContextMenu] = useState(false);
-  const [relinkInput, setRelinkInput] = useState(false);
 
   const handleDoubleClick = () => {
     if (!project.is_missing) {
@@ -90,7 +90,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
           alt={project.name}
           className="w-10 h-10 rounded-lg object-contain bg-slate-800 p-1 border border-slate-700"
           onError={(e) => {
-            // Fallback to initials if image fails to render
             (e.target as HTMLElement).style.display = 'none';
           }}
         />
@@ -189,7 +188,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
         )}
 
         {/* Action Buttons Row */}
-        <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-slate-800/80">
+        <div className="grid grid-cols-5 gap-1.5 pt-2 border-t border-slate-800/80">
+          <IconButton
+            icon={<Play className="w-4 h-4 text-emerald-400 fill-emerald-400/20" />}
+            title={project.is_missing ? 'Missing project cannot be opened' : 'Launch dev server (npm run dev)'}
+            variant="secondary"
+            size="md"
+            disabled={project.is_missing}
+            onClick={() => launchDevServer(project)}
+          />
           <IconButton
             icon={<Code2 className="w-4 h-4 text-indigo-400" />}
             title={project.is_missing ? 'Missing project cannot be opened' : 'Open in editor'}
@@ -199,7 +206,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
             onClick={() => launchEditor(project)}
           />
           <IconButton
-            icon={<Terminal className="w-4 h-4 text-emerald-400" />}
+            icon={<Terminal className="w-4 h-4 text-sky-400" />}
             title={project.is_missing ? 'Missing project cannot be opened' : 'Open terminal'}
             variant="secondary"
             size="md"
@@ -227,7 +234,18 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
 
       {/* Context Menu Dropdown */}
       {showContextMenu && (
-        <div className="absolute right-2 top-10 w-52 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-1.5 space-y-1 text-xs select-none">
+        <div className="absolute right-2 top-10 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-1.5 space-y-1 text-xs select-none">
+          <button
+            onClick={() => {
+              setShowContextMenu(false);
+              launchDevServer(project);
+            }}
+            disabled={project.is_missing}
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-200 hover:bg-slate-800 disabled:opacity-40"
+          >
+            <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400/20" />
+            Launch dev server (npm run dev)
+          </button>
           <button
             onClick={() => {
               setShowContextMenu(false);
@@ -257,7 +275,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
             disabled={project.is_missing}
             className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-200 hover:bg-slate-800 disabled:opacity-40"
           >
-            <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+            <Terminal className="w-3.5 h-3.5 text-sky-400" />
             Open terminal
           </button>
           <button

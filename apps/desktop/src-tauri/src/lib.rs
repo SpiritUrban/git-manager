@@ -100,6 +100,7 @@ pub fn run() {
             commands::scanner::check_path_exists,
             commands::launcher::launch_code_editor,
             commands::launcher::launch_terminal_app,
+            commands::launcher::launch_dev_server,
             commands::launcher::launch_open_folder,
             commands::favicons::resolve_project_icon,
             commands::favicons::refresh_remote_favicon,

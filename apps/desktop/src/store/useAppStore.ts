@@ -70,6 +70,7 @@ interface AppState {
   // Project Actions
   launchEditor: (project: Project) => Promise<void>;
   launchTerminal: (project: Project) => Promise<void>;
+  launchDevServer: (project: Project) => Promise<void>;
   launchFolder: (project: Project) => Promise<void>;
   launchWebsite: (project: Project) => Promise<void>;
   toggleFavorite: (project: Project) => Promise<void>;
@@ -312,6 +313,27 @@ export const useAppStore = create<AppState>((set, get) => ({
       await get().loadProjects();
     } else {
       get().showToast(`Failed to open terminal: ${res.error}`, 'error');
+    }
+  },
+
+  launchDevServer: async (project) => {
+    if (project.is_missing) {
+      get().showToast('Project directory is missing. Please relink folder.', 'error');
+      return;
+    }
+    const { settings } = get();
+    const res = await tauri.invokeLaunchDevServer(
+      settings.selected_terminal_profile,
+      settings.custom_terminal_executable,
+      settings.custom_terminal_args,
+      project.path
+    );
+    if (res.success) {
+      const now = new Date().toISOString();
+      await db.updateProject({ id: project.id, last_opened_at: now });
+      await get().loadProjects();
+    } else {
+      get().showToast(`Failed to launch dev server: ${res.error}`, 'error');
     }
   },
 

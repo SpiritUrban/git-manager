@@ -1,5 +1,5 @@
 use crate::models::LaunchResult;
-use crate::services::launcher::{launch_editor, launch_terminal, open_folder};
+use crate::services::launcher::{launch_editor, launch_terminal, launch_dev_server as service_launch_dev_server, open_folder};
 
 #[tauri::command]
 pub fn launch_code_editor(
@@ -28,6 +28,25 @@ pub fn launch_terminal_app(
     path: String,
 ) -> LaunchResult {
     match launch_terminal(&profile, &custom_exec, &custom_args, &path) {
+        Ok(_) => LaunchResult {
+            success: true,
+            error: None,
+        },
+        Err(e) => LaunchResult {
+            success: false,
+            error: Some(e),
+        },
+    }
+}
+
+#[tauri::command]
+pub fn launch_dev_server(
+    profile: String,
+    custom_exec: String,
+    custom_args: Vec<String>,
+    path: String,
+) -> LaunchResult {
+    match service_launch_dev_server(&profile, &custom_exec, &custom_args, &path) {
         Ok(_) => LaunchResult {
             success: true,
             error: None,

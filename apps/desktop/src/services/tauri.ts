@@ -84,6 +84,20 @@ export async function invokeLaunchTerminal(
   });
 }
 
+export async function invokeLaunchDevServer(
+  profile: TerminalProfileId,
+  customExec: string,
+  customArgs: string[],
+  path: string
+): Promise<LaunchResult> {
+  return await invoke<LaunchResult>('launch_dev_server', {
+    profile,
+    customExec,
+    customArgs,
+    path,
+  });
+}
+
 export async function invokeOpenFolder(path: string): Promise<LaunchResult> {
   return await invoke<LaunchResult>('launch_open_folder', { path });
 }
