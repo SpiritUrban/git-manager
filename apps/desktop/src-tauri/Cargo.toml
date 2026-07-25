@@ -1,0 +1,32 @@
+[package]
+name = "git-manager-desktop"
+version = "0.1.0"
+description = "Git Manager Desktop Application"
+authors = ["SpiritUrban <support@gitmanager.com>"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.0.5", features = [] }
+
+[dependencies]
+tauri = { version = "2.2.5" }
+tauri-plugin-dialog = "2.2.0"
+tauri-plugin-opener = "2.2.5"
+tauri-plugin-sql = { version = "2.2.0", features = ["sqlite"] }
+tauri-plugin-updater = "2.6.0"
+tauri-plugin-process = "2.2.0"
+tauri-plugin-log = "2.2.0"
+tauri-plugin-os = "2.2.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.43", features = ["full"] }
+walkdir = "2.5"
+ignore = "0.4"
+reqwest = { version = "0.12", features = ["stream"] }
+url = "2.5"
+uuid = { version = "1.12", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

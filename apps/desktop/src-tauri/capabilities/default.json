@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/v2/tooling/cli/schema.json",
+  "identifier": "default",
+  "description": "Default permissions for Git Manager Desktop",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "opener:default",
+    "sql:default",
+    "updater:default",
+    "process:default",
+    "log:default",
+    "os:default"
+  ]
+}

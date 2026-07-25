@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Default permissions for Git Manager Desktop","local":true,"windows":["main"],"permissions":["core:default","dialog:default","opener:default","sql:default","updater:default","process:default","log:default","os:default"]}}

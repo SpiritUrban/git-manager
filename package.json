@@ -1,0 +1,34 @@
+{
+  "name": "@git-manager/monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Git Manager - Cross-platform desktop application and marketing website for managing local Git repositories",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "scripts": {
+    "dev": "pnpm --filter @git-manager/desktop dev",
+    "dev:desktop": "pnpm --filter @git-manager/desktop dev",
+    "dev:site": "pnpm --filter @git-manager/site dev",
+    "build": "pnpm --filter \"@git-manager/*\" build",
+    "build:desktop": "pnpm --filter @git-manager/desktop build",
+    "build:site": "pnpm --filter @git-manager/site build",
+    "test": "pnpm --filter \"@git-manager/*\" test",
+    "test:ts": "vitest run",
+    "test:rust": "cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml",
+    "typecheck": "pnpm --filter \"@git-manager/*\" typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "pnpm typecheck && pnpm test:ts && pnpm test:rust",
+    "release:prepare": "node scripts/sync-version.mjs",
+    "version:check": "node scripts/check-version.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5",
+    "prettier": "^3.5.1",
+    "eslint": "^9.20.1"
+  }
+}
