@@ -34,7 +34,7 @@ jobs:
     permissions:
       contents: write
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - platform: 'windows-latest'
@@ -84,8 +84,13 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: './apps/desktop'
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Git Manager ${{ github.ref_name }}'
+          # pnpm workspace: the lockfile lives in the repo root, so tauri-action
+          # would otherwise fall back to npm for the build command.
+          tauriScript: 'pnpm tauri'
+          # Only publish a GitHub release for tag pushes; workflow_dispatch runs
+          # are build-only smoke tests.
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/') && format('Git Manager {0}', github.ref_name) || '' }}
           releaseBody: 'See release notes for Git Manager ${{ github.ref_name }}.'
           releaseDraft: false
           prerelease: false
