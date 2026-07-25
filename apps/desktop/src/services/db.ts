@@ -118,6 +118,8 @@ export async function upsertScanProjects(discovered: any[]): Promise<{ added: nu
           remote_origin = COALESCE(?, remote_origin),
           repository_url = COALESCE(?, repository_url),
           website_url = COALESCE(website_url, ?),
+          icon_source = COALESCE(?, icon_source),
+          icon_cache_path = COALESCE(?, icon_cache_path),
           updated_at = ?
         WHERE id = ?`,
         [
@@ -125,6 +127,8 @@ export async function upsertScanProjects(discovered: any[]): Promise<{ added: nu
           item.remote_origin || null,
           item.repository_url || null,
           item.website_url || null,
+          item.icon_path ? 'local_favicon' : null,
+          item.icon_path || null,
           now,
           prev.id,
         ]
@@ -137,7 +141,7 @@ export async function upsertScanProjects(discovered: any[]): Promise<{ added: nu
           id, path, normalized_path, name, group_id, manual_position,
           website_url, repository_url, remote_origin, icon_source, icon_cache_path,
           is_favorite, is_archived, is_missing, last_opened_at, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, NULL, NULL, 0, 0, 0, NULL, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0, 0, 0, NULL, ?, ?)`,
         [
           id,
           item.path,
@@ -147,6 +151,8 @@ export async function upsertScanProjects(discovered: any[]): Promise<{ added: nu
           item.website_url || null,
           item.repository_url || null,
           item.remote_origin || null,
+          item.icon_path ? 'local_favicon' : null,
+          item.icon_path || null,
           now,
           now,
         ]

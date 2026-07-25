@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Play,
 } from 'lucide-react';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { Card, Badge, IconButton, Button } from '@git-manager/ui';
 import type { Project, Group } from '@git-manager/shared';
 import { getFallbackInitials } from '@git-manager/shared';
@@ -83,20 +84,52 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
   };
 
   const renderIcon = () => {
+    let iconSrc: string | null = null;
+
+    // 1. Highest priority: Local icon file discovered in project directory
     if (project.icon_cache_path) {
-      return (
-        <img
-          src={`asset://${project.icon_cache_path}`}
-          alt={project.name}
-          className="w-10 h-10 rounded-lg object-contain bg-slate-800 p-1 border border-slate-700"
-          onError={(e) => {
-            (e.target as HTMLElement).style.display = 'none';
-          }}
-        />
-      );
+      if (project.icon_cache_path.startsWith('http://') || project.icon_cache_path.startsWith('https://')) {
+        iconSrc = project.icon_cache_path;
+      } else {
+        // Local file on disk (project favicon or cached copy) — the asset protocol
+        // resolves to http://asset.localhost/... on Windows, asset://localhost/... elsewhere.
+        iconSrc = convertFileSrc(project.icon_cache_path);
+      }
+    } else if (project.website_url) {
+      // 2. Custom website URL (e.g. https://my-app.dev)
+      try {
+        const u = new URL(project.website_url);
+        if (!u.hostname.includes('github.com') && !u.hostname.includes('gitlab.com')) {
+          iconSrc = `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=128`;
+        }
+      } catch {}
     }
 
     const initials = getFallbackInitials(project.name);
+
+    if (iconSrc) {
+      return (
+        <div className="relative w-10 h-10 shrink-0">
+          <img
+            src={iconSrc}
+            alt={project.name}
+            className="w-10 h-10 rounded-lg object-contain bg-slate-800 p-1 border border-slate-700 shadow-sm"
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = 'none';
+              const parent = e.currentTarget.parentElement;
+              if (parent) {
+                const fb = parent.querySelector('.initials-fallback') as HTMLElement;
+                if (fb) fb.style.display = 'flex';
+              }
+            }}
+          />
+          <div className="initials-fallback hidden w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-blue-600/20 border border-indigo-500/30 items-center justify-center font-black text-indigo-400 text-sm tracking-wider select-none shrink-0 shadow-inner">
+            {initials}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-blue-600/20 border border-indigo-500/30 flex items-center justify-center font-black text-indigo-400 text-sm tracking-wider select-none shrink-0 shadow-inner">
         {initials}

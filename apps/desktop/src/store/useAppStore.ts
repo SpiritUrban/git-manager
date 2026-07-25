@@ -95,6 +95,63 @@ interface AppState {
   setTagModalState: (isOpen: boolean, tag?: Tag | null) => void;
 }
 
+/** Projects whose icon resolution already ran (or is running) this session. */
+const iconResolutionAttempted = new Set<string>();
+
+/**
+ * Resolves favicons for projects that don't have one yet: first a local icon file
+ * inside the repo (public/favicon.ico and friends), then the remote favicon of
+ * website_url. Runs detached from loadProjects so the grid is never blocked, and
+ * patches the store per project as results arrive.
+ */
+async function resolveMissingIcons(
+  projects: Project[],
+  set: (partial: Partial<{ projects: Project[] }>) => void,
+  get: () => { projects: Project[] }
+): Promise<void> {
+  const pending = projects.filter(
+    (p) => !p.icon_cache_path && !p.is_missing && !iconResolutionAttempted.has(p.id)
+  );
+  if (pending.length === 0) return;
+
+  for (const p of pending) {
+    iconResolutionAttempted.add(p.id);
+  }
+
+  const CONCURRENCY = 6;
+  for (let i = 0; i < pending.length; i += CONCURRENCY) {
+    const batch = pending.slice(i, i + CONCURRENCY);
+    const resolved = await Promise.all(
+      batch.map(async (p) => {
+        try {
+          const res = await tauri.invokeResolveProjectIcon(p.path, p.website_url, p.id);
+          if (!res.icon_path) return null;
+          const icon_source = res.icon_source as Project['icon_source'];
+          await db.updateProject({ id: p.id, icon_source, icon_cache_path: res.icon_path });
+          return { id: p.id, icon_source, icon_cache_path: res.icon_path };
+        } catch {
+          // Leave the project on initials; a manual "Refresh favicon" can retry.
+          return null;
+        }
+      })
+    );
+
+    const patches = new Map(
+      resolved.filter((r): r is NonNullable<typeof r> => r !== null).map((r) => [r.id, r])
+    );
+    if (patches.size === 0) continue;
+
+    set({
+      projects: get().projects.map((p) => {
+        const patch = patches.get(p.id);
+        return patch
+          ? { ...p, icon_source: patch.icon_source, icon_cache_path: patch.icon_cache_path }
+          : p;
+      }),
+    });
+  }
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   activeView: 'all',
   selectedGroupId: null,
@@ -170,6 +227,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   loadProjects: async () => {
     const projects = await db.fetchProjects();
     set({ projects });
+
+    // Resolve missing icons in the background so the grid renders immediately.
+    void resolveMissingIcons(projects, set, get);
   },
 
   loadGroups: async () => {
