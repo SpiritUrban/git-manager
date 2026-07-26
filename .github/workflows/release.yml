@@ -33,6 +33,12 @@ jobs:
     name: Build Desktop App (${{ matrix.label }})
     permissions:
       contents: write
+    # Job-level so every step that runs a Tauri build can sign updater
+    # artifacts. Setting them on the tauri-action step alone left the
+    # diagnostic build below failing on "public key found, but no private key".
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     strategy:
       fail-fast: false
       matrix:
@@ -117,8 +123,6 @@ jobs:
         uses: tauri-apps/tauri-action@v0.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: './apps/desktop'
           # pnpm workspace: the lockfile lives in the repo root, so tauri-action
