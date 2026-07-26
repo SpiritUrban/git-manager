@@ -85,8 +85,10 @@ jobs:
         with:
           projectPath: './apps/desktop'
           # pnpm workspace: the lockfile lives in the repo root, so tauri-action
-          # would otherwise fall back to npm for the build command.
-          tauriScript: 'pnpm tauri'
+          # would otherwise fall back to npm for the build command. The script
+          # runs from the repo root, where there is no `tauri` script, hence the
+          # explicit filter rather than a bare `pnpm tauri`.
+          tauriScript: 'pnpm --filter @git-manager/desktop tauri'
           # Only publish a GitHub release for tag pushes; workflow_dispatch runs
           # are build-only smoke tests.
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
