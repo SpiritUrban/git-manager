@@ -39,7 +39,7 @@
       "preload": ["sqlite:git_manager.db"]
     },
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IGFkLWhvYyB1cGRhdGVyIHB1YmxpYyBrZXkgcGxhY2Vob2xkZXIK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUzOEVGOEIzN0I0QzUzMEUKUldRT1UweDdzL2lPVTRScnRteTBsZEYxOWpGVDFaTHc1VkxjSS8xa1Vtd0xXUDR0NEVuQjJZaTMK",
       "endpoints": [
         "https://github.com/SpiritUrban/git-manager/releases/latest/download/latest.json"
       ]
