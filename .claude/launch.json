@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["pnpm", "dev:site"],
       "port": 1429
+    },
+    {
+      "name": "desktop-ui",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["pnpm", "--filter", "@git-manager/desktop", "dev:frontend"],
+      "port": 1428
     }
   ]
 }

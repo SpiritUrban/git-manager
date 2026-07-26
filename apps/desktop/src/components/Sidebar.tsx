@@ -15,9 +15,13 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
+  Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 import { Logo, IconButton, Badge } from '@git-manager/ui';
+import { PRODUCT_METADATA } from '@git-manager/shared';
 import { useAppStore, MainView } from '../store/useAppStore.js';
+import * as tauri from '../services/tauri.js';
 
 export const Sidebar: React.FC = () => {
   const {
@@ -223,6 +227,18 @@ export const Sidebar: React.FC = () => {
         >
           <Settings className="w-4 h-4" />
           <span>Settings</span>
+        </button>
+
+        {/* Styled as a nav item rather than a promo block: always in view, never
+            in the way, and it reads as part of the app instead of an ad. */}
+        <button
+          onClick={() => tauri.invokeOpenBrowserUrl(PRODUCT_METADATA.authorUrl)}
+          title={`More projects and services by ${PRODUCT_METADATA.author}`}
+          className="group mt-1 w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 transition-all"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-indigo-400/70 group-hover:text-indigo-400 transition-colors shrink-0" />
+          <span className="truncate">More by {PRODUCT_METADATA.author}</span>
+          <ExternalLink className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
         </button>
       </div>
     </aside>
