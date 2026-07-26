@@ -34,7 +34,13 @@ async function generateManifest() {
       publishedAt: data.published_at || new Date().toISOString(),
       releasePageUrl: data.html_url || `https://github.com/${owner}/${repo}/releases`,
       releaseNotes: data.body || '',
-      assets: (data.assets || []).map((asset) => {
+      // Updater signatures and its manifest ride along in every release but are
+      // not downloadable builds; without this they land in the list classified
+      // as Windows, because no platform rule matches ".sig" or "latest.json".
+      assets: (data.assets || []).filter((asset) => {
+        const n = asset.name.toLowerCase();
+        return !n.endsWith('.sig') && n !== 'latest.json';
+      }).map((asset) => {
         // Tauri names bundles after productName, so the platform has to be read
         // off the extension: "Git.Manager-0.1.0-1.x86_64.rpm" and
         // "Git.Manager_aarch64.app.tar.gz" carry no platform word at all.
