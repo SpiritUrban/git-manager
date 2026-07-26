@@ -1,6 +1,7 @@
 import React from 'react';
 import { FolderPlus, GitBranch, FolderGit2 } from 'lucide-react';
 import { Button, Logo } from '@git-manager/ui';
+import { PRODUCT_METADATA } from '@git-manager/shared';
 import { useAppStore } from '../store/useAppStore.js';
 import * as tauri from '../services/tauri.js';
 
@@ -47,6 +48,18 @@ export const EmptyState: React.FC = () => {
           Add single repository
         </Button>
       </div>
+
+      {/* Only visible before any project exists, so it never appears during
+          actual work. One quiet line, no badge and no call to action. */}
+      <p className="mt-10 text-[11px] text-slate-600">
+        Free and open source, built by{' '}
+        <button
+          onClick={() => tauri.invokeOpenBrowserUrl(PRODUCT_METADATA.authorUrl)}
+          className="text-slate-500 hover:text-indigo-400 hover:underline"
+        >
+          {PRODUCT_METADATA.author}
+        </button>
+      </p>
     </div>
   );
 };

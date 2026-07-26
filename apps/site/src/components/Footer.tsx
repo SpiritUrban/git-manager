@@ -12,6 +12,17 @@ export const Footer: React.FC = () => {
           <p className="text-slate-500">
             Open-source desktop Git repository navigator. Released under the MIT License.
           </p>
+          <p className="text-slate-500">
+            Built by{' '}
+            <a
+              href={PRODUCT_METADATA.authorUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-slate-300 hover:text-indigo-400 transition-colors"
+            >
+              {PRODUCT_METADATA.author}
+            </a>
+          </p>
         </div>
 
         <div className="flex items-center gap-6 font-semibold">

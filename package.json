@@ -4,6 +4,10 @@
   "private": true,
   "description": "Git Manager - Cross-platform desktop application and marketing website for managing local Git repositories",
   "license": "MIT",
+  "author": {
+    "name": "Vitaliy Dyachuk",
+    "url": "https://spiriturban.github.io/"
+  },
   "type": "module",
   "packageManager": "pnpm@10.34.5",
   "scripts": {

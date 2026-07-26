@@ -37,7 +37,7 @@ When launching `Git Manager.app` for the first time, macOS may display:
 1. Right-click **Git Manager.app** in Finder.
 2. Select **Open** from the context menu.
 3. Click **Open** in the confirmation dialog.
-4. Alternatively, go to **System Settings $\rightarrow$ Privacy & Security** and click **Open Anyway**.
+4. Alternatively, go to **System Settings → Privacy & Security** and click **Open Anyway**.
 
 ---
 

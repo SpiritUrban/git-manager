@@ -130,6 +130,6 @@ Icons are determined according to the following priority:
 ## 🔮 Future Extension Points
 
 The codebase is structured into feature services to seamlessly integrate future Git actions:
-- `services/git.rs` $\rightarrow$ Extend for `git status`, `git branch`, and uncommitted changes count.
-- `commands/git.rs` $\rightarrow$ IPC handlers for commit/push/pull workflows.
-- `components/ProjectCard.tsx` $\rightarrow$ Render branch badge and worktree diff summaries.
+- `services/git.rs` → Extend for `git status`, `git branch`, and uncommitted changes count.
+- `commands/git.rs` → IPC handlers for commit/push/pull workflows.
+- `components/ProjectCard.tsx` → Render branch badge and worktree diff summaries.

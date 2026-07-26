@@ -24,7 +24,7 @@ This will produce:
 
 ### GitHub Repository Secrets Setup
 Add the private key as a GitHub Repository Secret:
-1. Open Repository $\rightarrow$ **Settings** $\rightarrow$ **Secrets and variables** $\rightarrow$ **Actions**.
+1. Open Repository → **Settings** → **Secrets and variables** → **Actions**.
 2. Click **New repository secret**.
    - Name: `TAURI_SIGNING_PRIVATE_KEY`
    - Value: *(Paste your private key string)*

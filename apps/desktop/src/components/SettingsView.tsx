@@ -15,6 +15,7 @@ import {
   FolderPlus,
   Info,
 } from 'lucide-react';
+import { getVersion } from '@tauri-apps/api/app';
 import { Button, Input, Callout, Badge } from '@git-manager/ui';
 import { useAppStore } from '../store/useAppStore.js';
 import { PRODUCT_METADATA } from '@git-manager/shared';
@@ -47,6 +48,13 @@ export const SettingsView: React.FC = () => {
   const [appDataDir, setAppDataDir] = useState<string>('');
   const [updateStatusText, setUpdateStatusText] = useState<string>('No check performed in this session.');
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  // Read from the bundle rather than a literal, which silently went stale and
+  // showed 0.1.0 to everyone running a later build.
+  const [appVersion, setAppVersion] = useState<string>('');
+
+  useEffect(() => {
+    getVersion().then(setAppVersion).catch(() => setAppVersion(''));
+  }, []);
 
   useEffect(() => {
     tauri.invokeGetAppDataDirPath().then((dir) => setAppDataDir(dir)).catch(() => {});
@@ -356,7 +364,7 @@ export const SettingsView: React.FC = () => {
         <div className="flex items-center justify-between p-4 bg-slate-950/40 rounded-xl border border-slate-800 text-xs">
           <div>
             <div className="font-bold text-slate-200 mb-1">
-              Current Version: <span className="text-indigo-400">v0.1.0</span>
+              Current Version: <span className="text-indigo-400">{appVersion ? `v${appVersion}` : '—'}</span>
             </div>
             <div className="text-slate-400">{updateStatusText}</div>
           </div>
@@ -430,6 +438,25 @@ export const SettingsView: React.FC = () => {
           </button>
           <button onClick={() => tauri.invokeOpenBrowserUrl(PRODUCT_METADATA.releasesUrl)} className="inline-flex items-center gap-1 hover:underline">
             <ExternalLink className="w-3.5 h-3.5" /> Release Notes
+          </button>
+        </div>
+
+        {/* Authorship lives here, on a screen the user opens deliberately —
+            never as a banner or toast during normal use. */}
+        <div className="pt-3 border-t border-slate-800 text-xs text-slate-400">
+          Built by{' '}
+          <button
+            onClick={() => tauri.invokeOpenBrowserUrl(PRODUCT_METADATA.authorUrl)}
+            className="font-semibold text-slate-200 hover:text-indigo-400 hover:underline"
+          >
+            {PRODUCT_METADATA.author}
+          </button>
+          {' — '}
+          <button
+            onClick={() => tauri.invokeOpenBrowserUrl(PRODUCT_METADATA.authorUrl)}
+            className="text-indigo-400 hover:underline"
+          >
+            more projects and services
           </button>
         </div>
       </section>

@@ -1,159 +1,111 @@
+<div align="center">
+
+<img src="apps/desktop/src-tauri/icons/128x128@2x.png" width="96" alt="Git Manager" />
+
 # Git Manager
 
-> A lightweight, cross-platform desktop manager for discovering, organizing, and launching your local Git repositories.
+**All your local Git repositories in one place — find them, group them, open them in one click.**
 
+[![Release](https://img.shields.io/github/v/release/SpiritUrban/git-manager?color=6366f1)](https://github.com/SpiritUrban/git-manager/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/SpiritUrban/git-manager/total?color=10b981)](https://github.com/SpiritUrban/git-manager/releases)
 [![CI](https://github.com/SpiritUrban/git-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/SpiritUrban/git-manager/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+[**Website & downloads**](https://spiriturban.github.io/git-manager/) ·
+[Latest release](https://github.com/SpiritUrban/git-manager/releases/latest) ·
+[Report a bug](https://github.com/SpiritUrban/git-manager/issues)
+
+</div>
+
 ---
 
-## ⚡ Overview
+If you keep dozens of projects on disk, finding the right one means digging through folder trees
+or retyping paths in a terminal. Git Manager scans the folders you point it at, finds every Git
+repository inside, and shows them as cards you can group, tag and reorder. One click opens a
+project in your editor, terminal, file manager, dev server, website or remote page.
 
-**Git Manager** helps developers who maintain dozens or hundreds of local Git repositories quickly navigate, organize, and launch them. Instead of browsing deep file trees or executing terminal navigation commands manually, Git Manager scans your specified root folders, presents your projects in customizable visual cards, groups them, and opens them in your favorite code editor, terminal emulator, file browser, or remote website with a single click.
+Everything lives locally in SQLite. No account, no cloud, no telemetry.
+
+## Download
+
+| Platform | Files |
+|---|---|
+| **Windows** | `.exe` installer — no admin rights needed; `.msi` for managed deployment |
+| **macOS** | `.dmg` for Apple Silicon and Intel |
+| **Linux** | `.AppImage`, `.deb`, `.rpm` |
+
+[**Get the latest release →**](https://github.com/SpiritUrban/git-manager/releases/latest)
+
+Every build comes from a tagged GitHub Actions run and ships a signed update manifest, so the
+app updates itself from then on.
 
 > [!NOTE]
-> All project configuration, metadata, and settings are stored locally on your device in SQLite. No cloud backend, telemetry, or tracking is used.
+> Builds are not code-signed yet, so Windows SmartScreen and macOS Gatekeeper warn on first
+> launch. On Windows choose **More info → Run anyway**; on macOS right-click the app → **Open**.
+> Per-platform steps are on the [website](https://spiriturban.github.io/git-manager/).
 
----
+## What it does
 
-## ✨ Features
+- **Finds repositories for you** — multithreaded scan of your root folders, skipping
+  `node_modules`, `target`, `dist` and other noise.
+- **Groups and tags** — colour-coded groups, multi-tag filters, favourites, drag-and-drop order.
+- **Opens things in one click** — VS Code, Cursor or a custom editor; Windows Terminal,
+  PowerShell, iTerm, GNOME Terminal, Konsole, Kitty, Alacritty or your own shell; the file
+  manager; the dev server; the project website; the remote page on GitHub, GitLab or Bitbucket.
+- **Recognises projects visually** — pulls each icon from the project's own favicon or app icon,
+  falling back to generated initials.
+- **Repository insight** — per-project overview with languages, file map, commit history and
+  contributor stats.
+- **Updates itself** — signed in-app updates with progress and a restart prompt.
+- **Dark and light themes.**
 
-- 🔍 **Fast Multithreaded Scanning**: Discovers Git repositories in specified root folders using high-performance background file traversal while skipping standard build outputs (`node_modules`, `target`, `.next`, etc.).
-- 📂 **Group & Tag Organization**: Categorize projects into custom color-coded groups and multi-tag filters.
-- 🤹 **Custom Drag-and-Drop Ordering**: Manually arrange cards and groups via intuitive drag-and-drop.
-- 💻 **One-Click Launchers**:
-  - **Code Editor**: Launch VS Code, Cursor, or custom IDE executables with custom argument templates.
-  - **Terminal**: Open Windows Terminal, PowerShell, CMD, macOS Terminal, iTerm, GNOME Terminal, Konsole, Kitty, Alacritty, or custom shell binaries directly in the project directory.
-  - **File Explorer**: Open native file manager (Explorer, Finder, Linux File Manager).
-  - **Website & Remote**: Open configured web application homepages or normalized Git remote URLs (GitHub, GitLab, Bitbucket) in your default browser.
-- 🎨 **Automatic Favicon & Icon Detection**: Resolves project icons from local app icons, HTML favicons, web app URLs, or smart initial fallbacks.
-- 🔄 **Automatic In-App Updates**: Background update checks via Tauri Updater with seamless download, progress tracking, and restart confirmation.
-- 🌙 **Dark & Light Themes**: Instrumental, high-contrast dark and light UI modes built with React, Tailwind CSS, and Lucide icons.
+Deliberately out of scope: staging, commits, merges, diffs, and anything needing an account.
+Git Manager launches your tools, it does not replace them.
 
----
+## Built with
 
-## 🚫 Non-Goals (Scope for initial release)
+Tauri v2 and Rust for the backend and native launchers · React 19, TypeScript, Tailwind CSS v4
+and Zustand for the interface · SQLite for local storage · pnpm workspace monorepo · GitHub
+Actions for CI, four-platform release builds and the GitHub Pages site.
 
-To maintain high performance and utility, the current release focuses exclusively on repository management and launcher efficiency. The following features are intentionally deferred for future releases:
-
-- Git staging, commit, push, pull, fetch, merge, rebase, diff viewer.
-- GitHub OAuth, cloud synchronization, user accounts, telemetry.
-- Auto-run on system startup, plugin framework, nested group trees.
-
----
-
-## 💻 Supported Platforms
-
-- **Windows**: x64 (`.exe` NSIS installer, `.msi`)
-- **macOS**: Apple Silicon (`arm64` `.dmg`) & Intel (`x64` `.dmg`)
-- **Linux**: x64 (`AppImage`, `.deb`)
-
----
-
-## ⚠️ Unsigned Preview Build Warning
-
-> [!WARNING]
-> **Git Manager is currently distributed without paid Windows Authenticode code signing certificates and without Apple Developer ID notarization.**
->
-> When installing Git Manager:
-> - **Windows**: SmartScreen may present a warning. Click **More info** $\rightarrow$ **Run anyway**.
-> - **macOS**: Gatekeeper may block launch. Right-click `Git Manager.app` $\rightarrow$ **Open**, or allow execution via **System Settings $\rightarrow$ Privacy & Security**.
-> - **Linux**: Ensure executable permissions are set on `.AppImage` files (`chmod +x Git-Manager_*.AppImage`).
->
-> Official releases are built deterministically from tag commits via GitHub Actions. Always verify downloads originate from our official [GitHub Releases](https://github.com/SpiritUrban/git-manager/releases).
-
----
-
-## 🛠️ Monorepo Structure
-
-```text
-git-manager/
-├─ apps/
-│  ├─ desktop/       # Tauri v2 + Rust + React + TS + Tailwind CSS desktop app
-│  └─ site/          # Vite static landing & download page for GitHub Pages
-├─ packages/
-│  ├─ shared/        # Product metadata, domain types, URL utilities, schemas
-│  ├─ ui/            # Shared React UI components & design system tokens
-│  └─ config/        # Common toolchain configurations
-├─ scripts/          # Release, version sync, and download manifest generators
-├─ docs/             # Technical architecture, development, release, and unsigned docs
-└─ .github/          # CI, Release, and GitHub Pages workflow actions
-```
-
----
-
-## 📦 Getting Started & Commands
-
-### Prerequisites
-
-- **Node.js**: `v20.x` or higher
-- **pnpm**: `v10.x` (or `npx pnpm`)
-- **Rust**: `1.80+` stable toolchain (`rustc`, `cargo`)
-- **Platform Dependencies**:
-  - **Linux**: `libwebkit2gtk-4.1-dev`, `build-essential`, `curl`, `wget`, `file`, `libxdo-dev`, `libssl-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`.
-
-### Local Development Commands
+## Development
 
 ```bash
-# Install monorepo dependencies
 pnpm install
-
-# Start desktop app in development mode
-pnpm dev:desktop
-
-# Start marketing site in development mode
-pnpm dev:site
-
-# Run all TypeScript & Rust tests
-pnpm check
-
-# Execute Vitest TypeScript tests
-pnpm test:ts
-
-# Execute Cargo Rust tests
-pnpm test:rust
-
-# Typecheck monorepo packages
-pnpm typecheck
 ```
 
----
+```bash
+pnpm dev:desktop
+```
 
-## 🚀 Release Process & Updater Keys
+```bash
+pnpm check
+```
 
-Tauri Updater requires an Ed25519 public/private keypair for verifying release manifests (`latest.json`) and signature files (`.sig`).
+Needs Node 20+, pnpm 10+ and a stable Rust toolchain. Linux additionally needs the WebKitGTK
+development packages — exact list in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-1. Generate keypair using Tauri CLI:
-   ```bash
-   npx tauri signer generate
-   ```
-2. Store the **Public Key** in `apps/desktop/src-tauri/tauri.conf.json` under `plugins.updater.pubkey`.
-3. Save the **Private Key** securely as a GitHub Repository Secret:
-   - Secret Name: `TAURI_SIGNING_PRIVATE_KEY`
-   - Password Secret (optional): `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
-4. Trigger release:
-   ```bash
-   pnpm release:prepare 0.2.0
-   git add .
-   git commit -m "chore: release v0.2.0"
-   git tag v0.2.0
-   git push origin main
-   git push origin v0.2.0
-   ```
+More detail: [architecture](docs/ARCHITECTURE.md) · [contributing](CONTRIBUTING.md) ·
+[releasing](RELEASING.md) · [security policy](SECURITY.md)
 
-Refer to [docs/RELEASE.md](docs/RELEASE.md) and [docs/UNSIGNED_BUILDS.md](docs/UNSIGNED_BUILDS.md) for full instructions.
+## Roadmap
 
----
+- [ ] Branch status badge on project cards
+- [ ] Uncommitted changes counter
+- [ ] Quick commit and push actions
+- [ ] Custom workspace layouts and keyboard shortcuts
 
-## 🛣️ Future Roadmap
+## Author
 
-- [ ] Interactive branch status badge on project cards
-- [ ] Stash / Uncommitted changes counter
-- [ ] Quick commit & push shortcut action bar
-- [ ] Custom workspace layouts & keyboard shortcut cheatsheet
+Built by **Vitaliy Dyachuk** — [spiriturban.github.io](https://spiriturban.github.io/)
 
----
+I help site owners untangle difficult web projects. More of my work and services are on
+[my site](https://spiriturban.github.io/); the code lives on
+[GitHub](https://github.com/SpiritUrban).
 
-## 📄 License
+If Git Manager saves you time, a ⭐ on the repository is the easiest way to say thanks.
 
-Distributed under the [MIT License](LICENSE).
+## License
+
+[MIT](LICENSE) © 2026 Vitaliy Dyachuk. Free to use, modify and redistribute — the one condition
+is that the copyright notice stays with the code.
