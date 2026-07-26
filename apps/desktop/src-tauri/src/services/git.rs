@@ -78,6 +78,72 @@ pub struct PackageJsonInfo {
     pub homepage: Option<String>,
 }
 
+/// Scaffolding tools write their own template name into `package.json`, so
+/// projects created with them all claim to be `tauri-app`, `nextjs` or `app`.
+/// Such a name is less informative than the directory name and collides across
+/// unrelated projects, so it is discarded in favour of the folder.
+pub fn is_generic_package_name(name: &str) -> bool {
+    // Drop an npm scope so "@acme/monorepo" is judged on "monorepo".
+    let bare = name
+        .rsplit('/')
+        .next()
+        .unwrap_or(name)
+        .trim()
+        .to_lowercase();
+
+    const GENERIC: &[&str] = &[
+        "app",
+        "application",
+        "my-app",
+        "myapp",
+        "tauri-app",
+        "my-tauri-app",
+        "electron-app",
+        "vite-project",
+        "vite-app",
+        "react-app",
+        "my-react-app",
+        "temp-react-app",
+        "next-app",
+        "nextjs",
+        "next",
+        "nuxt-app",
+        "nuxt",
+        "vue-app",
+        "svelte-app",
+        "solid-app",
+        "my-project",
+        "project",
+        "frontend",
+        "front",
+        "backend",
+        "back",
+        "client",
+        "server",
+        "web",
+        "site",
+        "desktop",
+        "monorepo",
+        "workspace",
+        "root",
+        "main",
+        "src",
+        "template",
+        "boilerplate",
+        "starter",
+        "example",
+        "examples",
+        "demo",
+        "test",
+        "untitled",
+    ];
+
+    GENERIC.contains(&bare.as_str())
+        || bare.ends_with("-template")
+        || bare.ends_with("-boilerplate")
+        || bare.ends_with("-starter")
+}
+
 pub fn read_package_json(dir: &Path) -> PackageJsonInfo {
     let pkg_path = dir.join("package.json");
     let mut info = PackageJsonInfo {
@@ -88,10 +154,13 @@ pub fn read_package_json(dir: &Path) -> PackageJsonInfo {
     if pkg_path.is_file() {
         if let Ok(content) = fs::read_to_string(&pkg_path) {
             if let Ok(json) = serde_json::from_str::<Value>(&content) {
+                // `displayName` is set deliberately, so it is always trusted.
                 if let Some(dn) = json.get("displayName").and_then(|v| v.as_str()) {
                     info.display_name = Some(dn.to_string());
                 } else if let Some(n) = json.get("name").and_then(|v| v.as_str()) {
-                    info.display_name = Some(n.to_string());
+                    if !is_generic_package_name(n) {
+                        info.display_name = Some(n.to_string());
+                    }
                 }
 
                 if let Some(hp) = json.get("homepage").and_then(|v| v.as_str()) {
