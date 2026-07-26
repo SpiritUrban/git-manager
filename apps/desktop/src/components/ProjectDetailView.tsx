@@ -189,7 +189,7 @@ export const ProjectDetailView: React.FC = () => {
             />
             <IconButton
               icon={<Pencil className="w-4 h-4 text-slate-400" />}
-              title="Edit project details"
+              title="Edit details, group & tags"
               variant="secondary"
               onClick={() => setEditingProject(project)}
             />

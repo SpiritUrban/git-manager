@@ -130,12 +130,17 @@ export const ProjectEditModal: React.FC = () => {
             </select>
           </div>
 
-          {/* Tags */}
-          {tags.length > 0 && (
-            <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1.5 block">Project Tags</label>
-              <div className="flex flex-wrap gap-2 p-2.5 bg-slate-800/60 border border-slate-700/60 rounded-xl">
-                {tags.map((t) => {
+          {/* Tags — always rendered: hiding the whole block when no tags exist
+              left no hint that projects can be tagged at all. */}
+          <div>
+            <label className="text-xs font-semibold text-slate-300 mb-1.5 block">Project Tags</label>
+            <div className="flex flex-wrap gap-2 p-2.5 bg-slate-800/60 border border-slate-700/60 rounded-xl">
+              {tags.length === 0 ? (
+                <span className="text-xs text-slate-500 italic">
+                  No tags yet — create one in the sidebar, then assign it here.
+                </span>
+              ) : (
+                tags.map((t) => {
                   const isChecked = selectedTagIds.includes(t.id);
                   return (
                     <button
@@ -151,10 +156,10 @@ export const ProjectEditModal: React.FC = () => {
                       {t.name}
                     </button>
                   );
-                })}
-              </div>
+                })
+              )}
             </div>
-          )}
+          </div>
 
           {/* Website URL */}
           <Input

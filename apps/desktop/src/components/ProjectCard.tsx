@@ -15,6 +15,9 @@ import {
   Trash2,
   ExternalLink,
   Play,
+  FolderKanban,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { Card, Badge, IconButton, Button } from '@git-manager/ui';
@@ -51,9 +54,26 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
     relinkFolder,
     openProjectDetail,
     showToast,
+    groups,
+    updateProjectData,
   } = useAppStore();
 
   const [showContextMenu, setShowContextMenu] = useState(false);
+  // Assigning a group used to be reachable only through the edit dialog, behind
+  // a menu entry that never mentioned groups.
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
+
+  const toggleContextMenu = () => {
+    setShowContextMenu((open) => !open);
+    setShowGroupPicker(false);
+  };
+
+  const handleMoveToGroup = async (targetGroupId: string | null) => {
+    setShowGroupPicker(false);
+    setShowContextMenu(false);
+    // No tag list passed, so the project's tags are left untouched.
+    await updateProjectData({ id: project.id, group_id: targetGroupId });
+  };
 
   /** Everything interactive inside the card sits above the card-wide open handler. */
   const stopBubble = (e: React.MouseEvent) => e.stopPropagation();
@@ -203,7 +223,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
                 icon={<MoreVertical className="w-3.5 h-3.5 text-slate-400" />}
                 title="Project options"
                 size="sm"
-                onClick={() => setShowContextMenu(!showContextMenu)}
+                onClick={toggleContextMenu}
               />
             </div>
           </div>
@@ -323,6 +343,54 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
             Launch dev server (npm run dev)
           </button>
           <button
+            onClick={() => setShowGroupPicker(!showGroupPicker)}
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-200 hover:bg-slate-800"
+          >
+            <FolderKanban className="w-3.5 h-3.5 text-indigo-400" />
+            Move to group
+            {showGroupPicker ? (
+              <ChevronDown className="w-3.5 h-3.5 ml-auto text-slate-500" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 ml-auto text-slate-500" />
+            )}
+          </button>
+
+          {showGroupPicker && (
+            <div className="ml-2 pl-2 border-l border-slate-800 space-y-0.5 max-h-44 overflow-y-auto">
+              <button
+                onClick={() => handleMoveToGroup(null)}
+                className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-800 ${
+                  project.group_id ? 'text-slate-400' : 'text-indigo-300 font-semibold'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full border border-slate-600 shrink-0" />
+                No group
+              </button>
+              {groups.length === 0 ? (
+                <div className="px-2.5 py-1.5 text-slate-500 italic">
+                  No groups yet — create one in the sidebar
+                </div>
+              ) : (
+                groups.map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => handleMoveToGroup(g.id)}
+                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-800 ${
+                      project.group_id === g.id ? 'text-indigo-300 font-semibold' : 'text-slate-300'
+                    }`}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: g.color }}
+                    />
+                    <span className="truncate">{g.name}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+
+          <button
             onClick={() => {
               setShowContextMenu(false);
               setEditingProject(project);
@@ -330,7 +398,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
             className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-200 hover:bg-slate-800"
           >
             <Pencil className="w-3.5 h-3.5 text-indigo-400" />
-            Edit project details
+            Edit details, group &amp; tags
           </button>
           <button
             onClick={() => {

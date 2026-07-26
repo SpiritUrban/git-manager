@@ -139,12 +139,32 @@ export const ProjectGrid: React.FC = () => {
         <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex items-center justify-center text-slate-500 mb-4">
           <FolderGit2 className="w-8 h-8" />
         </div>
-        <h3 className="text-base font-bold text-slate-200 mb-1">No repositories found</h3>
+        <h3 className="text-base font-bold text-slate-200 mb-1">
+          {!searchQuery && (selectedGroupId || selectedTagId)
+            ? 'Nothing assigned here yet'
+            : 'No repositories found'}
+        </h3>
         <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
           {searchQuery
             ? `No projects matched "${searchQuery}". Try clearing search filter.`
             : 'No projects exist in this view category yet.'}
         </p>
+
+        {/* Creating a group or tag is easy to find; filling it was not, so say
+            where the assignment lives right where the user gets stuck. */}
+        {!searchQuery && selectedGroupId && (
+          <p className="mt-3 text-xs text-slate-500 max-w-sm leading-relaxed">
+            Open any project card, click <strong className="text-slate-400">⋮</strong> and choose{' '}
+            <strong className="text-slate-400">Move to group</strong>.
+          </p>
+        )}
+        {!searchQuery && selectedTagId && (
+          <p className="mt-3 text-xs text-slate-500 max-w-sm leading-relaxed">
+            Open any project card, click <strong className="text-slate-400">⋮</strong> →{' '}
+            <strong className="text-slate-400">Edit details, group &amp; tags</strong> and pick the
+            tag there.
+          </p>
+        )}
       </div>
     );
   }
