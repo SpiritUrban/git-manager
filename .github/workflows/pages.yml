@@ -48,6 +48,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/generate-download-manifest.mjs
 
+      # Which release the manifest actually resolved to is otherwise only in the
+      # run log, which needs a signed-in session. A notice is public.
+      - name: Report resolved release
+        run: |
+          v=$(node -p "require('./apps/site/public/download-manifest.json').version")
+          n=$(node -p "require('./apps/site/public/download-manifest.json').assets.length")
+          echo "::notice title=Download manifest::ref=${GITHUB_REF_NAME} -> version ${v}, ${n} assets"
+
       - name: Build Marketing Site
         env:
           GITHUB_PAGES: 'true'

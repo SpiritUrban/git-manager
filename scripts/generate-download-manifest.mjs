@@ -13,7 +13,15 @@ if (!fs.existsSync(outDir)) {
 
 async function generateManifest() {
   try {
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
+    // When this runs as part of a release, ask for that exact tag. "latest" is
+    // resolved by GitHub and there is no guarantee it already points at the
+    // release the run just produced.
+    const ref = process.env.GITHUB_REF_NAME || '';
+    const isTag = /^v\d+\.\d+\.\d+$/.test(ref);
+    const apiUrl = isTag
+      ? `https://api.github.com/repos/${owner}/${repo}/releases/tags/${ref}`
+      : `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
+    console.log(`Resolving release from ${isTag ? `tag ${ref}` : 'latest'}`);
     // Unauthenticated calls get 60 requests per hour per IP; exhausting that
     // returns 403 and would silently leave the site with no download links.
     const headers = { 'User-Agent': 'Git-Manager-Site-Builder' };
