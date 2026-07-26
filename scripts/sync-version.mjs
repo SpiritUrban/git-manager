@@ -49,4 +49,20 @@ if (fs.existsSync(cargoPath)) {
   console.log(`  Updated ${cargoPath}`);
 }
 
+// Update Cargo.lock. It records the crate's own version and is committed, so
+// skipping it would leave the lockfile one release behind. Only the entry for
+// this package is touched — dependency resolution is left alone.
+const cargoLockPath = 'apps/desktop/src-tauri/Cargo.lock';
+if (fs.existsSync(cargoLockPath)) {
+  const crateName = 'git-manager-desktop';
+  const lock = fs.readFileSync(cargoLockPath, 'utf8');
+  const pattern = new RegExp(`(name = "${crateName}"\\r?\\nversion = ")[^"]+(")`);
+  if (!pattern.test(lock)) {
+    console.error(`  Could not find the ${crateName} entry in ${cargoLockPath}`);
+    process.exit(1);
+  }
+  fs.writeFileSync(cargoLockPath, lock.replace(pattern, `$1${version}$2`));
+  console.log(`  Updated ${cargoLockPath}`);
+}
+
 console.log('Version synchronization complete.');
