@@ -48,8 +48,9 @@ export const DownloadSection: React.FC = () => {
       platform: 'windows' as const,
       arch: 'x64',
       suffix: '-setup.exe',
+      recommended: true,
       name: 'Windows x64 Setup',
-      type: 'Installer (.exe)',
+      type: 'Installer (.exe) · no admin rights needed',
       icon: <Monitor className="w-5 h-5 text-blue-400" />,
     },
     {
@@ -57,13 +58,14 @@ export const DownloadSection: React.FC = () => {
       arch: 'x64',
       suffix: '.msi',
       name: 'Windows x64 MSI',
-      type: 'Package (.msi)',
+      type: 'Package (.msi) · for managed deployment',
       icon: <Monitor className="w-5 h-5 text-blue-400" />,
     },
     {
       platform: 'macos' as const,
       arch: 'arm64',
       suffix: '.dmg',
+      recommended: true,
       name: 'macOS Apple Silicon',
       type: 'Disk Image (.dmg)',
       icon: <Apple className="w-5 h-5 text-slate-200" />,
@@ -80,6 +82,7 @@ export const DownloadSection: React.FC = () => {
       platform: 'linux' as const,
       arch: 'x64',
       suffix: '.appimage',
+      recommended: true,
       name: 'Linux AppImage',
       type: 'Executable (.AppImage)',
       icon: <LinuxIcon className="w-5 h-5 text-amber-400" />,
@@ -112,7 +115,9 @@ export const DownloadSection: React.FC = () => {
         {/* Downloads Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {downloadTargets.map((item, idx) => {
-            const isRecommended = item.platform === detectedOs;
+            // Every card of the detected platform used to claim the badge, so Windows
+            // showed two "recommended" downloads side by side.
+            const isRecommended = item.platform === detectedOs && item.recommended === true;
             const matchedAsset = manifest?.assets.find(
               (a) =>
                 a.platform === item.platform &&
@@ -155,7 +160,9 @@ export const DownloadSection: React.FC = () => {
                       fullWidth
                       icon={<Download className="w-4 h-4" />}
                     >
-                      Download {manifest ? `v${manifest.version}` : 'v0.1.0'}
+                      {/* No hardcoded fallback version: it goes stale on every
+                          release and would advertise the wrong build. */}
+                      Download {manifest ? `v${manifest.version}` : ''}
                     </Button>
                   </a>
                 </div>

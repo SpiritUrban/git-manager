@@ -89,8 +89,11 @@ async function generateManifest() {
 // here would give the site download links that 404; an empty list makes it fall
 // back to the releases page instead.
 function writeFallbackManifest() {
+  // Read the version rather than hardcoding it: a literal here silently goes
+  // stale on every release and would advertise a version that does not exist.
+  const rootVersion = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
   const fallback = {
-    version: '0.1.0',
+    version: rootVersion,
     publishedAt: new Date().toISOString(),
     releasePageUrl: `https://github.com/${owner}/${repo}/releases`,
     releaseNotes: 'No published release yet.',
