@@ -14,9 +14,13 @@ if (!fs.existsSync(outDir)) {
 async function generateManifest() {
   try {
     const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
-    const res = await fetch(apiUrl, {
-      headers: { 'User-Agent': 'Git-Manager-Site-Builder' },
-    });
+    // Unauthenticated calls get 60 requests per hour per IP; exhausting that
+    // returns 403 and would silently leave the site with no download links.
+    const headers = { 'User-Agent': 'Git-Manager-Site-Builder' };
+    if (process.env.GITHUB_TOKEN) {
+      headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+    const res = await fetch(apiUrl, { headers });
 
     if (!res.ok) {
       console.warn(`GitHub API returned ${res.status}. Falling back to clean default manifest state.`);
@@ -31,15 +35,29 @@ async function generateManifest() {
       releasePageUrl: data.html_url || `https://github.com/${owner}/${repo}/releases`,
       releaseNotes: data.body || '',
       assets: (data.assets || []).map((asset) => {
+        // Tauri names bundles after productName, so the platform has to be read
+        // off the extension: "Git.Manager-0.1.0-1.x86_64.rpm" and
+        // "Git.Manager_aarch64.app.tar.gz" carry no platform word at all.
+        const name = asset.name.toLowerCase();
         let platform = 'windows';
-        if (asset.name.includes('macos') || asset.name.includes('darwin') || asset.name.endsWith('.dmg')) {
+        if (
+          name.includes('macos') ||
+          name.includes('darwin') ||
+          name.endsWith('.dmg') ||
+          name.endsWith('.app.tar.gz')
+        ) {
           platform = 'macos';
-        } else if (asset.name.includes('linux') || asset.name.endsWith('.AppImage') || asset.name.endsWith('.deb')) {
+        } else if (
+          name.includes('linux') ||
+          name.endsWith('.appimage') ||
+          name.endsWith('.deb') ||
+          name.endsWith('.rpm')
+        ) {
           platform = 'linux';
         }
 
         let architecture = 'x64';
-        if (asset.name.includes('arm64') || asset.name.includes('aarch64')) {
+        if (name.includes('arm64') || name.includes('aarch64')) {
           architecture = 'arm64';
         }
 

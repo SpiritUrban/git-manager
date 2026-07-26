@@ -30,21 +30,32 @@ jobs:
 
   build-tauri:
     needs: validate-version
-    name: Build Desktop App (${{ matrix.platform }})
+    name: Build Desktop App (${{ matrix.label }})
     permissions:
       contents: write
     strategy:
       fail-fast: false
       matrix:
+        # The Intel macOS build cross-compiles from the arm64 runner: the
+        # macos-13 label no longer gets assigned a runner and left the job
+        # queued indefinitely, which kept the whole run from ever completing.
         include:
           - platform: 'windows-latest'
+            label: 'windows-x64'
             args: ''
+            rust_targets: ''
           - platform: 'ubuntu-22.04'
+            label: 'linux-x64'
             args: ''
+            rust_targets: ''
           - platform: 'macos-latest'
+            label: 'macos-arm64'
             args: '--target aarch64-apple-darwin'
-          - platform: 'macos-13'
+            rust_targets: 'aarch64-apple-darwin'
+          - platform: 'macos-latest'
+            label: 'macos-x64'
             args: '--target x86_64-apple-darwin'
+            rust_targets: 'x86_64-apple-darwin'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -61,11 +72,14 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || matrix.platform == 'macos-13' && 'x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.rust_targets }}
 
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri
+          # Two matrix entries share the macos-latest runner, so the label has
+          # to be part of the key or they would fight over one cache.
+          key: ${{ matrix.label }}
 
       - name: Install Linux GUI Dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -120,3 +134,17 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+  # The release is created by GITHUB_TOKEN, and GitHub deliberately does not
+  # start workflows from events raised by that token — so the `release:
+  # published` trigger in pages.yml never fires. Deploying from here instead
+  # keeps the site's download links in step with the assets just uploaded.
+  deploy-site:
+    name: Deploy Site with Release Downloads
+    needs: build-tauri
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
