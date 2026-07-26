@@ -76,6 +76,29 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # tauri-action reports only the exit code of the build command, so run the
+      # same command first with the output captured and surfaced as annotations.
+      # A warm target dir makes the build inside tauri-action incremental.
+      - name: Build Desktop App
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm --filter @git-manager/desktop tauri build ${{ matrix.args }} 2>&1 | tee build.log
+
+      - name: Surface build output
+        if: failure()
+        shell: bash
+        run: |
+          if [ ! -s build.log ]; then
+            echo "::error title=Build::build.log is missing or empty"
+            exit 0
+          fi
+          log=$(tail -c 6000 build.log)
+          log="${log//'%'/'%25'}"
+          log="${log//$'\r'/'%0D'}"
+          log="${log//$'\n'/'%0A'}"
+          echo "::error title=Build output::$log"
+
       - name: Build Tauri Application
         uses: tauri-apps/tauri-action@v0.5
         env:
