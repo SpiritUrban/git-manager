@@ -12,7 +12,9 @@ out/
 # Rust / Cargo
 **/target/
 **/*.rs.bk
-Cargo.lock
+# Cargo.lock is committed: this is an application, not a library, and the Tauri
+# CLI reads it to check that Rust crate and npm package versions match. Without
+# it CI compares against the Cargo.toml requirement strings and refuses to build.
 
 # Tauri & Signing Keys
 **/*.key
