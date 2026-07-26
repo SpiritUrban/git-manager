@@ -20,7 +20,7 @@ Git Manager binaries are currently compiled and distributed **without paid comme
 ## ⚠️ Platform Security Behaviors
 
 ### 1. Windows SmartScreen
-When executing `Git-Manager_*-setup.exe` or `*.msi`, Windows SmartScreen may display:
+When executing `Git.Manager_*-setup.exe` or `*.msi`, Windows SmartScreen may display:
 > *"Windows protected your PC. Microsoft Defender SmartScreen prevented an unrecognized app from starting."*
 
 **How to run**:
@@ -44,8 +44,8 @@ When launching `Git Manager.app` for the first time, macOS may display:
 ### 3. Linux Executable Permissions
 AppImage binaries on Linux require executable file permissions:
 ```bash
-chmod +x Git-Manager_*.AppImage
-./Git-Manager_*.AppImage
+chmod +x Git.Manager_*.AppImage
+./Git.Manager_*.AppImage
 ```
 
 ---
