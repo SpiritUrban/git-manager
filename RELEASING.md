@@ -62,7 +62,15 @@ https://github.com/SpiritUrban/git-manager/releases/latest — має бути `
 curl -s -L https://github.com/SpiritUrban/git-manager/releases/latest/download/latest.json | head -5
 ```
 
-Мусить віддати JSON із новою версією. Якщо 404 — реліз не дійшов до кінця.
+Мусить віддати JSON із новою версією **і всіма 11 платформними ключами**:
+
+```bash
+curl -s -L https://github.com/SpiritUrban/git-manager/releases/latest/download/latest.json | python -c "import json,sys; d=json.load(sys.stdin); print(len(d['platforms']))"
+```
+
+Якщо 404 — реліз не дійшов до кінця. Якщо ключів менше за 11 — теж: кожна джоба спершу вивантажує
+інсталятори і лише потім дописує свої записи, тож проміжний стан виглядає як повний реліз, хоча
+частина платформ оновлення ще не бачить. Зачекайте й перевірте ще раз.
 
 **3. Сайт**
 
