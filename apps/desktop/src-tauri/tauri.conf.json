@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/v2/tooling/cli/schema.json",
   "productName": "Git Manager",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.gitmanager.desktop",
   "build": {
     "beforeDevCommand": "npx pnpm dev:frontend",
@@ -28,7 +28,9 @@
       "assetProtocol": {
         "enable": true,
         "scope": {
-          "allow": ["**"],
+          "allow": [
+            "**"
+          ],
           "requireLiteralLeadingDot": false
         }
       }
@@ -36,7 +38,9 @@
   },
   "plugins": {
     "sql": {
-      "preload": ["sqlite:git_manager.db"]
+      "preload": [
+        "sqlite:git_manager.db"
+      ]
     },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUzOEVGOEIzN0I0QzUzMEUKUldRT1UweDdzL2lPVTRScnRteTBsZEYxOWpGVDFaTHc1VkxjSS8xa1Vtd0xXUDR0NEVuQjJZaTMK",
@@ -48,6 +52,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

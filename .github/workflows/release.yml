@@ -133,6 +133,9 @@ jobs:
           releaseBody: 'See release notes for Git Manager ${{ github.ref_name }}.'
           releaseDraft: false
           prerelease: false
+          # latest.json is what the in-app updater polls; without it the updater
+          # endpoint 404s and no client ever sees an update.
+          includeUpdaterJson: true
           args: ${{ matrix.args }}
 
   # The release is created by GITHUB_TOKEN, and GitHub deliberately does not
