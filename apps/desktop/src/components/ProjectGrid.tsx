@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, ChevronRight, FolderGit2 } from 'lucide-react';
+import { Button } from '@git-manager/ui';
 import type { Project, Group } from '@git-manager/shared';
 import { useAppStore } from '../store/useAppStore.js';
 import { ProjectCard } from './ProjectCard.js';
@@ -57,11 +58,22 @@ export const ProjectGrid: React.FC = () => {
     sortOption,
     reorderProjects,
     toggleGroupCollapsed,
+    setActiveView,
   } = useAppStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const matchesQuery = React.useCallback(
+    (p: Project, q: string) =>
+      p.name.toLowerCase().includes(q) ||
+      p.path.toLowerCase().includes(q) ||
+      (p.website_url ? p.website_url.toLowerCase().includes(q) : false) ||
+      (p.repository_url ? p.repository_url.toLowerCase().includes(q) : false) ||
+      (p.tags?.some((t) => t.name.toLowerCase().includes(q)) ?? false),
+    []
   );
 
   // Filter projects based on active view & search query
@@ -90,15 +102,8 @@ export const ProjectGrid: React.FC = () => {
 
     // Filter by search query
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.path.toLowerCase().includes(q) ||
-          (p.website_url && p.website_url.toLowerCase().includes(q)) ||
-          (p.repository_url && p.repository_url.toLowerCase().includes(q)) ||
-          p.tags?.some((t) => t.name.toLowerCase().includes(q))
-      );
+      const q = searchQuery.trim().toLowerCase();
+      list = list.filter((p) => matchesQuery(p, q));
     }
 
     // Apply Sorting
@@ -118,7 +123,18 @@ export const ProjectGrid: React.FC = () => {
     }
 
     return list;
-  }, [projects, activeView, selectedGroupId, selectedTagId, searchQuery, sortOption]);
+  }, [projects, activeView, selectedGroupId, selectedTagId, searchQuery, sortOption, matchesQuery]);
+
+  // The view filter runs before the search, so a query can match projects that
+  // the current view hides — most often archived ones. Reporting "nothing
+  // found" in that case makes the app look like the project is gone.
+  const hiddenMatches = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return { total: 0, archived: 0 };
+    const visible = new Set(filteredProjects.map((p) => p.id));
+    const hidden = projects.filter((p) => !visible.has(p.id) && matchesQuery(p, q));
+    return { total: hidden.length, archived: hidden.filter((p) => p.is_archived).length };
+  }, [projects, filteredProjects, searchQuery, matchesQuery]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -146,9 +162,27 @@ export const ProjectGrid: React.FC = () => {
         </h3>
         <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
           {searchQuery
-            ? `No projects matched "${searchQuery}". Try clearing search filter.`
+            ? `No projects matched "${searchQuery}" in this view.`
             : 'No projects exist in this view category yet.'}
         </p>
+
+        {hiddenMatches.total > 0 && (
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <p className="text-xs text-amber-300/90 max-w-sm leading-relaxed">
+              {hiddenMatches.total === 1 ? '1 project matches' : `${hiddenMatches.total} projects match`}{' '}
+              {hiddenMatches.archived === hiddenMatches.total
+                ? 'but ' + (hiddenMatches.total === 1 ? 'it is' : 'they are') + ' archived.'
+                : 'but are hidden by the current view.'}
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setActiveView(hiddenMatches.archived > 0 ? 'archived' : 'all')}
+            >
+              {hiddenMatches.archived > 0 ? 'Search in Archived' : 'Search in All Projects'}
+            </Button>
+          </div>
+        )}
 
         {/* Creating a group or tag is easy to find; filling it was not, so say
             where the assignment lives right where the user gets stuck. */}
@@ -254,6 +288,24 @@ export const ProjectGrid: React.FC = () => {
   // Standard flat grid view
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      {/* A partial result is just as misleading as an empty one when the rest
+          sit in a view the user is not looking at. */}
+      {hiddenMatches.total > 0 && (
+        <div className="flex items-center gap-3 text-[11px] text-amber-300/90 bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-1.5">
+          <span>
+            {hiddenMatches.total} more{' '}
+            {hiddenMatches.total === 1 ? 'project matches' : 'projects match'} outside this view
+            {hiddenMatches.archived > 0 ? ` (${hiddenMatches.archived} archived)` : ''}.
+          </span>
+          <button
+            onClick={() => setActiveView(hiddenMatches.archived > 0 ? 'archived' : 'all')}
+            className="font-semibold underline hover:text-amber-200 shrink-0"
+          >
+            {hiddenMatches.archived > 0 ? 'Show archived' : 'Show all'}
+          </button>
+        </div>
+      )}
+
       {!isDragEnabled && (
         <div className="text-[11px] text-slate-400 bg-slate-800/50 border border-slate-800 rounded-lg px-3 py-1.5 inline-block">
           💡 Drag-and-drop manual ordering is available when sort mode is set to <strong>Manual Order</strong>.
