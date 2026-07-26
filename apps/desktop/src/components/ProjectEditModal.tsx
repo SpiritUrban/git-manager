@@ -2,32 +2,38 @@ import React, { useState } from 'react';
 import { X, FolderOpen, Globe, GitBranch, Star, Archive, Save } from 'lucide-react';
 import { Button, Input } from '@git-manager/ui';
 import { useAppStore } from '../store/useAppStore.js';
-import { isValidHttpUrl } from '@git-manager/shared';
+import { isValidHttpUrl, type Project } from '@git-manager/shared';
 import * as tauri from '../services/tauri.js';
 
+/**
+ * The dialog is mounted unconditionally, so the "is anything being edited"
+ * check has to happen before any state exists. Keeping the form in a child
+ * means its hooks only ever run while a project is actually open, and the
+ * `key` gives each project a fresh form instead of leaving the previous
+ * project's values behind.
+ */
 export const ProjectEditModal: React.FC = () => {
-  const {
-    editingProject,
-    groups,
-    tags,
-    setEditingProject,
-    updateProjectData,
-    relinkFolder,
-    showToast,
-  } = useAppStore();
+  const editingProject = useAppStore((s) => s.editingProject);
 
   if (!editingProject) return null;
 
-  const [name, setName] = useState(editingProject.name);
-  const [path, setPath] = useState(editingProject.path);
-  const [groupId, setGroupId] = useState<string>(editingProject.group_id || '');
+  return <ProjectEditForm key={editingProject.id} project={editingProject} />;
+};
+
+const ProjectEditForm: React.FC<{ project: Project }> = ({ project }) => {
+  const { groups, tags, setEditingProject, updateProjectData, relinkFolder, showToast } =
+    useAppStore();
+
+  const [name, setName] = useState(project.name);
+  const [path, setPath] = useState(project.path);
+  const [groupId, setGroupId] = useState<string>(project.group_id || '');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
-    editingProject.tags?.map((t) => t.id) || []
+    project.tags?.map((t) => t.id) || []
   );
-  const [websiteUrl, setWebsiteUrl] = useState(editingProject.website_url || '');
-  const [repositoryUrl, setRepositoryUrl] = useState(editingProject.repository_url || '');
-  const [isFavorite, setIsFavorite] = useState(editingProject.is_favorite);
-  const [isArchived, setIsArchived] = useState(editingProject.is_archived);
+  const [websiteUrl, setWebsiteUrl] = useState(project.website_url || '');
+  const [repositoryUrl, setRepositoryUrl] = useState(project.repository_url || '');
+  const [isFavorite, setIsFavorite] = useState(project.is_favorite);
+  const [isArchived, setIsArchived] = useState(project.is_archived);
 
   const [urlError, setUrlError] = useState('');
 
@@ -56,8 +62,8 @@ export const ProjectEditModal: React.FC = () => {
 
     await updateProjectData(
       {
-        id: editingProject.id,
-        name: name.trim() || editingProject.name,
+        id: project.id,
+        name: name.trim() || project.name,
         path: path.trim(),
         group_id: groupId || null,
         website_url: websiteUrl.trim() || null,
