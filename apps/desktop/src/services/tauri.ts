@@ -122,8 +122,16 @@ export async function invokeResolveProjectIcon(
   });
 }
 
-export async function invokeRefreshRemoteFavicon(websiteUrl: string, projectId: string): Promise<string> {
-  return await invoke<string>('refresh_remote_favicon', { websiteUrl, projectId });
+export async function invokeRefreshProjectIcon(
+  path: string,
+  websiteUrl: string | null,
+  projectId: string
+): Promise<IconResolutionResult> {
+  return await invoke<IconResolutionResult>('refresh_remote_favicon', { path, websiteUrl, projectId });
+}
+
+export async function invokeDetectProjectName(path: string): Promise<string> {
+  return await invoke<string>('detect_project_name', { path });
 }
 
 export async function invokeResolveProjectWebsite(

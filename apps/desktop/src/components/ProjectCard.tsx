@@ -84,20 +84,28 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, group, dragHa
 
   const handleRefreshIcon = async () => {
     setShowContextMenu(false);
-    if (project.website_url) {
-      try {
-        const cached = await tauri.invokeRefreshRemoteFavicon(project.website_url, project.id);
-        useAppStore.getState().updateProjectData({
-          id: project.id,
-          icon_source: 'remote_favicon',
-          icon_cache_path: cached,
-        });
-        showToast('Icon refreshed successfully', 'success');
-      } catch (err: any) {
-        showToast(`Failed to refresh icon: ${err.message || err}`, 'error');
-      }
-    } else {
-      showToast('No website URL configured to fetch favicon', 'info');
+    try {
+      // The command prefers the website favicon and falls back to an icon file
+      // inside the project, so a site without a favicon no longer wipes out a
+      // working local icon.
+      const resolved = await tauri.invokeRefreshProjectIcon(
+        project.path,
+        project.website_url ?? null,
+        project.id
+      );
+      useAppStore.getState().updateProjectData({
+        id: project.id,
+        icon_source: resolved.icon_source,
+        icon_cache_path: resolved.icon_path,
+      });
+      showToast(
+        resolved.icon_source === 'remote_favicon'
+          ? 'Icon refreshed from the website'
+          : 'Website had no icon — using the one found in the project folder',
+        'success'
+      );
+    } catch (err: any) {
+      showToast(`Failed to refresh icon: ${err.message || err}`, 'error');
     }
   };
 

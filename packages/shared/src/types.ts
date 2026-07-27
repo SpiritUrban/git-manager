@@ -101,7 +101,9 @@ export interface LaunchResult {
 }
 
 export interface IconResolutionResult {
-  icon_source: string;
+  /** Narrowed to what the Rust command actually returns, so the result can be
+      written straight back onto a project without a cast. */
+  icon_source: 'custom' | 'local_favicon' | 'remote_favicon' | 'initials';
   icon_path?: string | null;
 }
 

@@ -102,6 +102,7 @@ pub fn run() {
             commands::launcher::launch_open_folder,
             commands::favicons::resolve_project_icon,
             commands::favicons::refresh_remote_favicon,
+            commands::favicons::detect_project_name,
             commands::analysis::analyze_project,
             commands::website::resolve_project_website,
             commands::system::clear_icon_cache,

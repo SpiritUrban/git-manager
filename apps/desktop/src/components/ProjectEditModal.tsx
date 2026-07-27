@@ -45,6 +45,20 @@ const ProjectEditForm: React.FC<{ project: Project }> = ({ project }) => {
     }
   };
 
+  const handleDetectName = async () => {
+    try {
+      const detected = await tauri.invokeDetectProjectName(path.trim() || project.path);
+      if (detected && detected !== name) {
+        setName(detected);
+        showToast(`Detected name: ${detected}`, 'info');
+      } else if (detected === name) {
+        showToast('Already matches the detected name', 'info');
+      }
+    } catch (err: any) {
+      showToast(`Could not read the project folder: ${err.message || err}`, 'error');
+    }
+  };
+
   const handleSelectRelinkPath = async () => {
     const selected = await tauri.selectFolderDialog('Select Local Project Folder');
     if (selected) {
@@ -94,13 +108,25 @@ const ProjectEditForm: React.FC<{ project: Project }> = ({ project }) => {
         {/* Modal Form */}
         <form onSubmit={handleSave} className="p-6 space-y-4 overflow-y-auto flex-1">
           {/* Display Name */}
-          <Input
-            label="Display Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Project Name"
-            required
-          />
+          <div>
+            <Input
+              label="Display Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Project Name"
+              required
+            />
+            {/* The name is only captured when a project is first discovered, so
+                a package.json corrected afterwards had no way in short of
+                removing and rescanning the project. */}
+            <button
+              type="button"
+              onClick={handleDetectName}
+              className="mt-1.5 text-[11px] text-indigo-400 hover:underline"
+            >
+              Detect from folder and package.json
+            </button>
+          </div>
 
           {/* Path */}
           <div>
