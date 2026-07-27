@@ -142,16 +142,11 @@ jobs:
           includeUpdaterJson: true
           args: ${{ matrix.args }}
 
-  # The release is created by GITHUB_TOKEN, and GitHub deliberately does not
-  # start workflows from events raised by that token — so the `release:
-  # published` trigger in pages.yml never fires. Deploying from here instead
-  # keeps the site's download links in step with the assets just uploaded.
-  deploy-site:
-    name: Deploy Site with Release Downloads
-    needs: build-tauri
-    if: startsWith(github.ref, 'refs/tags/')
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/pages.yml
+# There is deliberately no site deployment here. A `release: published` trigger
+# cannot work, because the release is created by GITHUB_TOKEN and GitHub does
+# not start workflows from that token's events. Calling the Pages workflow from
+# this run instead was tried for two releases: it generated the right manifest
+# and reported success both times, while the served site kept the content of the
+# earlier deployment. Rather than keep a step that claims to work and does not,
+# the download page asks GitHub for the current release in the browser, so it is
+# correct within a second of a release regardless of when Pages last deployed.

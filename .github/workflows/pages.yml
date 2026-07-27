@@ -8,9 +8,9 @@ on:
       - 'packages/ui/**'
       - 'packages/shared/**'
       - 'scripts/generate-download-manifest.mjs'
-  # Called by release.yml once the release assets exist, because a release
-  # created by GITHUB_TOKEN cannot trigger a workflow on its own.
-  workflow_call:
+  # Manual refresh: the built manifest is only a fallback for visitors who
+  # cannot reach the GitHub API, so it is allowed to lag a release. Run this to
+  # bring it up to date immediately.
   workflow_dispatch:
 
 permissions:
