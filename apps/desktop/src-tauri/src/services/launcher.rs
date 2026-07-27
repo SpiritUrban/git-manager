@@ -7,6 +7,36 @@ use std::os::windows::process::CommandExt;
 #[cfg(target_os = "windows")]
 const CREATE_NEW_CONSOLE: u32 = 0x00000010;
 
+/// Editors ship a `.cmd` shim on Windows — `code.cmd`, `cursor.cmd` — but Rust
+/// only appends `.exe` when it searches PATH, so spawning the bare name fails
+/// with "program not found" even though the editor is installed and on PATH.
+pub fn windows_shim_candidates(program: &str) -> Vec<String> {
+    if cfg!(target_os = "windows") {
+        vec![format!("{program}.cmd"), format!("{program}.bat")]
+    } else {
+        Vec::new()
+    }
+}
+
+/// Runs `program`, and on Windows retries the shim names when the executable
+/// itself was not found. Any other failure is reported as-is rather than
+/// retried, so a permission or crash error is not disguised as a missing tool.
+fn spawn_program(program: &str, args: &[String]) -> std::io::Result<()> {
+    let attempt = |name: &str| Command::new(name).args(args).spawn().map(|_| ());
+
+    match attempt(program) {
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            for candidate in windows_shim_candidates(program) {
+                if let Ok(()) = attempt(&candidate) {
+                    return Ok(());
+                }
+            }
+            Err(err)
+        }
+        other => other,
+    }
+}
+
 pub fn launch_editor(
     profile: &str,
     custom_exec: &str,
@@ -18,51 +48,30 @@ pub fn launch_editor(
         return Err(format!("Target directory does not exist: {}", target_path));
     }
 
-    match profile {
-        "code" => {
-            Command::new("code")
-                .arg(target_path)
-                .spawn()
-                .map_err(|e| format!("Failed to launch VS Code: {}", e))?;
-        }
-        "code-insiders" => {
-            Command::new("code-insiders")
-                .arg(target_path)
-                .spawn()
-                .map_err(|e| format!("Failed to launch VS Code Insiders: {}", e))?;
-        }
-        "cursor" => {
-            Command::new("cursor")
-                .arg(target_path)
-                .spawn()
-                .map_err(|e| format!("Failed to launch Cursor: {}", e))?;
-        }
+    let (program, label) = match profile {
+        "code-insiders" => ("code-insiders", "VS Code Insiders"),
+        "cursor" => ("cursor", "Cursor"),
         "custom" => {
             if custom_exec.trim().is_empty() {
                 return Err("Custom editor executable is not configured.".to_string());
             }
-            let mut cmd = Command::new(custom_exec);
-            if custom_args.is_empty() {
-                cmd.arg(target_path);
-            } else {
-                for arg in custom_args {
-                    let replaced = arg.replace("{path}", target_path);
-                    cmd.arg(replaced);
-                }
-            }
-            cmd.spawn()
-                .map_err(|e| format!("Failed to launch custom editor ({}) : {}", custom_exec, e))?;
+            (custom_exec, "custom editor")
         }
-        _ => {
-            // Default fallback to VS Code
-            Command::new("code")
-                .arg(target_path)
-                .spawn()
-                .map_err(|e| format!("Failed to launch default editor: {}", e))?;
-        }
-    }
+        // "code" and anything unrecognised fall back to VS Code.
+        _ => ("code", "VS Code"),
+    };
 
-    Ok(())
+    let args: Vec<String> = if profile == "custom" && !custom_args.is_empty() {
+        custom_args
+            .iter()
+            .map(|arg| arg.replace("{path}", target_path))
+            .collect()
+    } else {
+        vec![target_path.to_string()]
+    };
+
+    spawn_program(program, &args)
+        .map_err(|e| format!("Failed to launch {} ({}): {}", label, program, e))
 }
 
 pub fn launch_terminal(

@@ -60,3 +60,18 @@ fn test_real_package_names_are_kept() {
         );
     }
 }
+
+#[test]
+fn test_windows_shim_candidates() {
+    let candidates = crate::services::launcher::windows_shim_candidates("code");
+    if cfg!(target_os = "windows") {
+        // VS Code and Cursor are reachable only through these on Windows:
+        // Rust appends .exe when searching PATH and never tries .cmd.
+        assert_eq!(
+            candidates,
+            vec!["code.cmd".to_string(), "code.bat".to_string()]
+        );
+    } else {
+        assert!(candidates.is_empty());
+    }
+}
