@@ -257,7 +257,9 @@ export interface ProjectAnalysis {
 export interface DownloadAsset {
   platform: 'windows' | 'macos' | 'linux';
   architecture: 'x64' | 'arm64';
-  fileType: 'installer' | 'msi' | 'dmg' | 'appimage' | 'deb';
+  /** Optional: nothing has ever populated it, and consumers match on the
+      file name suffix instead, which also distinguishes .exe from .msi. */
+  fileType?: 'installer' | 'msi' | 'dmg' | 'appimage' | 'deb';
   fileName: string;
   fileSize?: number;
   downloadUrl: string;

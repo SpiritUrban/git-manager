@@ -1,27 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Monitor, Apple, Terminal as LinuxIcon, ExternalLink, ShieldAlert } from 'lucide-react';
 import { Button, Badge } from '@git-manager/ui';
-import { PRODUCT_METADATA } from '@git-manager/shared';
-
-interface ManifestAsset {
-  platform: 'windows' | 'macos' | 'linux';
-  architecture: 'x64' | 'arm64';
-  fileType: string;
-  fileName: string;
-  fileSize?: string;
-  downloadUrl: string;
-}
-
-interface ManifestData {
-  version: string;
-  publishedAt: string;
-  releasePageUrl: string;
-  assets: ManifestAsset[];
-}
+import {
+  PRODUCT_METADATA,
+  buildDownloadManifest,
+  type DownloadManifest,
+  type DownloadAsset,
+} from '@git-manager/shared';
 
 export const DownloadSection: React.FC = () => {
   const [detectedOs, setDetectedOs] = useState<'windows' | 'macos' | 'linux'>('windows');
-  const [manifest, setManifest] = useState<ManifestData | null>(null);
+  const [manifest, setManifest] = useState<DownloadManifest | null>(null);
 
   useEffect(() => {
     // Detect Browser OS
@@ -34,11 +23,30 @@ export const DownloadSection: React.FC = () => {
       setDetectedOs('windows');
     }
 
-    // Attempt to load download manifest
+    let cancelled = false;
+
+    // The manifest baked in at build time is only as fresh as the last Pages
+    // deployment, and a deployment can lag a release. Show it immediately so the
+    // buttons work offline, then correct it from the live release.
     fetch(`${import.meta.env.BASE_URL}download-manifest.json`)
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setManifest(data))
-      .catch(() => setManifest(null));
+      .then((data) => {
+        if (!cancelled && data) setManifest(data);
+      })
+      .catch(() => {});
+
+    fetch(`https://api.github.com/repos/${PRODUCT_METADATA.repositoryOwner}/${PRODUCT_METADATA.repositoryName}/releases/latest`, {
+      headers: { Accept: 'application/vnd.github+json' },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((release) => {
+        if (!cancelled && release) setManifest(buildDownloadManifest(release));
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // `suffix` picks the right file out of a release: platform and architecture
@@ -119,7 +127,7 @@ export const DownloadSection: React.FC = () => {
             // showed two "recommended" downloads side by side.
             const isRecommended = item.platform === detectedOs && item.recommended === true;
             const matchedAsset = manifest?.assets.find(
-              (a) =>
+              (a: DownloadAsset) =>
                 a.platform === item.platform &&
                 a.architecture === item.arch &&
                 a.fileName.toLowerCase().endsWith(item.suffix)

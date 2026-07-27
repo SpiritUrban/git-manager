@@ -1,6 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
+// Same module the site uses at runtime, so the two can never classify an asset
+// differently. It is plain JavaScript precisely so this script can import it.
+import { buildDownloadManifest } from '../packages/shared/src/release-assets.js';
+
 const owner = 'SpiritUrban';
 const repo = 'git-manager';
 
@@ -22,6 +26,7 @@ async function generateManifest() {
       ? `https://api.github.com/repos/${owner}/${repo}/releases/tags/${ref}`
       : `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
     console.log(`Resolving release from ${isTag ? `tag ${ref}` : 'latest'}`);
+
     // Unauthenticated calls get 60 requests per hour per IP; exhausting that
     // returns 403 and would silently leave the site with no download links.
     const headers = { 'User-Agent': 'Git-Manager-Site-Builder' };
@@ -36,55 +41,7 @@ async function generateManifest() {
       return;
     }
 
-    const data = await res.json();
-    const manifest = {
-      version: data.tag_name ? data.tag_name.replace(/^v/, '') : '0.1.0',
-      publishedAt: data.published_at || new Date().toISOString(),
-      releasePageUrl: data.html_url || `https://github.com/${owner}/${repo}/releases`,
-      releaseNotes: data.body || '',
-      // Updater signatures and its manifest ride along in every release but are
-      // not downloadable builds; without this they land in the list classified
-      // as Windows, because no platform rule matches ".sig" or "latest.json".
-      assets: (data.assets || []).filter((asset) => {
-        const n = asset.name.toLowerCase();
-        return !n.endsWith('.sig') && n !== 'latest.json';
-      }).map((asset) => {
-        // Tauri names bundles after productName, so the platform has to be read
-        // off the extension: "Git.Manager-0.1.0-1.x86_64.rpm" and
-        // "Git.Manager_aarch64.app.tar.gz" carry no platform word at all.
-        const name = asset.name.toLowerCase();
-        let platform = 'windows';
-        if (
-          name.includes('macos') ||
-          name.includes('darwin') ||
-          name.endsWith('.dmg') ||
-          name.endsWith('.app.tar.gz')
-        ) {
-          platform = 'macos';
-        } else if (
-          name.includes('linux') ||
-          name.endsWith('.appimage') ||
-          name.endsWith('.deb') ||
-          name.endsWith('.rpm')
-        ) {
-          platform = 'linux';
-        }
-
-        let architecture = 'x64';
-        if (name.includes('arm64') || name.includes('aarch64')) {
-          architecture = 'arm64';
-        }
-
-        return {
-          platform,
-          architecture,
-          fileName: asset.name,
-          fileSize: asset.size,
-          downloadUrl: asset.browser_download_url,
-        };
-      }),
-    };
-
+    const manifest = buildDownloadManifest(await res.json());
     fs.writeFileSync(outFile, JSON.stringify(manifest, null, 2) + '\n');
     console.log(`Generated download manifest at ${outFile}`);
   } catch (err) {
