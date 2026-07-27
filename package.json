@@ -1,6 +1,6 @@
 {
   "name": "@git-manager/monorepo",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "description": "Git Manager - Cross-platform desktop application and marketing website for managing local Git repositories",
   "license": "MIT",
