@@ -21,8 +21,18 @@ pub fn windows_shim_candidates(program: &str) -> Vec<String> {
 /// Runs `program`, and on Windows retries the shim names when the executable
 /// itself was not found. Any other failure is reported as-is rather than
 /// retried, so a permission or crash error is not disguised as a missing tool.
-fn spawn_program(program: &str, args: &[String]) -> std::io::Result<()> {
-    let attempt = |name: &str| Command::new(name).args(args).spawn().map(|_| ());
+///
+/// `configure` applies everything else the call site needs — arguments, working
+/// directory, creation flags — so each retry is built the same way.
+fn spawn_with_fallback<F>(program: &str, configure: F) -> std::io::Result<()>
+where
+    F: Fn(&mut Command),
+{
+    let attempt = |name: &str| {
+        let mut cmd = Command::new(name);
+        configure(&mut cmd);
+        cmd.spawn().map(|_| ())
+    };
 
     match attempt(program) {
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
@@ -35,6 +45,12 @@ fn spawn_program(program: &str, args: &[String]) -> std::io::Result<()> {
         }
         other => other,
     }
+}
+
+fn spawn_program(program: &str, args: &[String]) -> std::io::Result<()> {
+    spawn_with_fallback(program, |cmd| {
+        cmd.args(args);
+    })
 }
 
 pub fn launch_editor(
@@ -132,13 +148,14 @@ pub fn launch_terminal(
                 if custom_exec.trim().is_empty() {
                     return Err("Custom terminal executable is not configured.".to_string());
                 }
-                let mut cmd = Command::new(custom_exec);
-                cmd.creation_flags(CREATE_NEW_CONSOLE);
-                cmd.current_dir(target_path);
-                for arg in custom_args {
-                    cmd.arg(arg.replace("{path}", target_path));
-                }
-                cmd.spawn().map_err(|e| {
+                spawn_with_fallback(custom_exec, |cmd| {
+                    cmd.creation_flags(CREATE_NEW_CONSOLE);
+                    cmd.current_dir(target_path);
+                    for arg in custom_args {
+                        cmd.arg(arg.replace("{path}", target_path));
+                    }
+                })
+                .map_err(|e| {
                     format!("Failed to launch custom terminal ({}) : {}", custom_exec, e)
                 })?;
             }
@@ -169,13 +186,13 @@ pub fn launch_terminal(
                 if custom_exec.trim().is_empty() {
                     return Err("Custom terminal executable is not configured.".to_string());
                 }
-                let mut cmd = Command::new(custom_exec);
-                cmd.current_dir(target_path);
-                for arg in custom_args {
-                    cmd.arg(arg.replace("{path}", target_path));
-                }
-                cmd.spawn()
-                    .map_err(|e| format!("Failed to launch custom terminal: {}", e))?;
+                spawn_with_fallback(custom_exec, |cmd| {
+                    cmd.current_dir(target_path);
+                    for arg in custom_args {
+                        cmd.arg(arg.replace("{path}", target_path));
+                    }
+                })
+                .map_err(|e| format!("Failed to launch custom terminal: {}", e))?;
             }
             _ => {
                 Command::new("open")
@@ -216,13 +233,13 @@ pub fn launch_terminal(
                 if custom_exec.trim().is_empty() {
                     return Err("Custom terminal executable is not configured.".to_string());
                 }
-                let mut cmd = Command::new(custom_exec);
-                cmd.current_dir(target_path);
-                for arg in custom_args {
-                    cmd.arg(arg.replace("{path}", target_path));
-                }
-                cmd.spawn()
-                    .map_err(|e| format!("Failed to launch custom terminal: {}", e))?;
+                spawn_with_fallback(custom_exec, |cmd| {
+                    cmd.current_dir(target_path);
+                    for arg in custom_args {
+                        cmd.arg(arg.replace("{path}", target_path));
+                    }
+                })
+                .map_err(|e| format!("Failed to launch custom terminal: {}", e))?;
             }
             _ => {
                 Command::new("gnome-terminal")
@@ -321,14 +338,14 @@ pub fn launch_dev_server(
                 if custom_exec.trim().is_empty() {
                     return Err("Custom terminal executable is not configured.".to_string());
                 }
-                let mut cmd = Command::new(custom_exec);
-                cmd.creation_flags(CREATE_NEW_CONSOLE);
-                cmd.current_dir(target_path);
-                for arg in custom_args {
-                    cmd.arg(arg.replace("{path}", target_path));
-                }
-                cmd.spawn()
-                    .map_err(|e| format!("Failed to launch custom dev server: {}", e))?;
+                spawn_with_fallback(custom_exec, |cmd| {
+                    cmd.creation_flags(CREATE_NEW_CONSOLE);
+                    cmd.current_dir(target_path);
+                    for arg in custom_args {
+                        cmd.arg(arg.replace("{path}", target_path));
+                    }
+                })
+                .map_err(|e| format!("Failed to launch custom dev server: {}", e))?;
             }
             _ => {
                 Command::new("powershell.exe")
